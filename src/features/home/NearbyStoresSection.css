@@ -1,0 +1,83 @@
+.bq-stores-section {
+  padding-top: 4.5rem;
+  padding-bottom: 4.5rem;
+  background-color: var(--color-white);
+  border-bottom: 1px solid var(--color-slate-200);
+}
+
+.bq-stores-capabilities-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.bq-capability-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.35rem;
+  background-color: var(--color-slate-50);
+  border: 1px solid var(--color-slate-200);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.bq-capability-card:hover {
+  background-color: var(--color-white);
+  border-color: var(--color-primary-300);
+  box-shadow: var(--shadow-sm);
+}
+
+.bq-capability-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary-50);
+  color: var(--color-primary-700);
+  border: 1px solid var(--color-primary-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.85rem;
+}
+
+.bq-capability-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-slate-900);
+  margin-bottom: 0.35rem;
+}
+
+.bq-capability-desc {
+  font-size: 0.85rem;
+  color: var(--color-slate-600);
+  line-height: 1.5;
+}
+
+/* Status Box */
+.bq-stores-status-box {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem 1.25rem;
+  background-color: var(--color-primary-50);
+  border: 1px solid var(--color-primary-200);
+  border-radius: var(--radius-md);
+  color: var(--color-primary-900);
+  font-size: 0.875rem;
+}
+
+.bq-stores-status-icon {
+  color: var(--color-primary-700);
+  flex-shrink: 0;
+}
+
+.bq-stores-status-text {
+  line-height: 1.45;
+}
+
+@media (max-width: 640px) {
+  .bq-stores-capabilities-grid {
+    grid-template-columns: 1fr;
+  }
+}

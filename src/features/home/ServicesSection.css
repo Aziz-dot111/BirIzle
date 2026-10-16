@@ -1,0 +1,192 @@
+.bq-services-section {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
+  background-color: var(--color-slate-50);
+  border-bottom: 1px solid var(--color-slate-200);
+}
+
+.bq-services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.bq-service-category-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-slate-200);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.bq-service-category-card:hover {
+  border-color: var(--color-primary-400);
+  box-shadow: var(--shadow-sm);
+}
+
+.bq-service-category-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+}
+
+.bq-service-category-card__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary-50);
+  color: var(--color-primary-700);
+  border: 1px solid var(--color-primary-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.bq-service-category-card:hover .bq-service-category-card__icon {
+  background-color: var(--color-primary-700);
+  color: var(--color-white);
+  border-color: var(--color-primary-800);
+}
+
+.bq-service-category-card__stage {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-slate-500);
+  background-color: var(--color-slate-100);
+  border: 1px solid var(--color-slate-200);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-xs);
+}
+
+.bq-service-category-card__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-slate-900);
+  margin-bottom: 0.35rem;
+}
+
+.bq-service-category-card__desc {
+  font-size: 0.825rem;
+  color: var(--color-slate-600);
+  line-height: 1.45;
+  margin-bottom: 1rem;
+  flex: 1;
+}
+
+.bq-service-category-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.bq-service-chip {
+  font-size: 0.725rem;
+  font-weight: 500;
+  color: var(--color-slate-700);
+  background-color: var(--color-slate-50);
+  border: 1px solid var(--color-slate-200);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-xs);
+}
+
+.bq-service-category-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-slate-100);
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--color-primary-700);
+}
+
+.bq-service-arrow {
+  transition: transform var(--transition-fast);
+}
+
+.bq-service-category-card:hover .bq-service-arrow {
+  transform: translateX(3px);
+}
+
+/* Modal */
+.bq-service-modal {
+  background-color: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  max-width: 440px;
+  width: 100%;
+  position: relative;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-slate-200);
+}
+
+.bq-service-modal__close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: var(--color-slate-400);
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.bq-service-modal__close:hover {
+  color: var(--color-slate-700);
+}
+
+.bq-service-modal__icon {
+  width: 50px;
+  height: 50px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary-50);
+  color: var(--color-primary-700);
+  border: 1px solid var(--color-primary-100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.bq-service-modal__title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-slate-900);
+  margin-bottom: 0.35rem;
+}
+
+.bq-service-modal__desc {
+  font-size: 0.875rem;
+  color: var(--color-slate-600);
+  margin-bottom: 1.25rem;
+}
+
+.bq-service-modal__notice {
+  background-color: var(--color-slate-50);
+  border: 1px solid var(--color-slate-200);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  text-align: left;
+  font-size: 0.825rem;
+  color: var(--color-slate-600);
+  line-height: 1.5;
+  margin-bottom: 1.25rem;
+}
+
+.bq-service-modal__notice-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: var(--color-primary-800);
+  margin-bottom: 0.25rem;
+}
+
+.bq-service-modal__btn {
+  width: 100%;
+}

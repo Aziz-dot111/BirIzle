@@ -1,0 +1,109 @@
+.bq-hero {
+  background-color: var(--color-white);
+  border-bottom: 1px solid var(--color-slate-200);
+  padding-top: 3.5rem;
+  padding-bottom: 3.5rem;
+}
+
+.bq-hero__container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.bq-hero__tag {
+  display: inline-block;
+  font-size: 0.775rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-primary-800);
+  background-color: var(--color-primary-50);
+  border: 1px solid var(--color-primary-200);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 1.25rem;
+}
+
+.bq-hero__title {
+  font-size: clamp(2rem, 4.5vw, 3.25rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--color-slate-900);
+  max-width: 760px;
+  line-height: 1.15;
+  margin-bottom: 0.85rem;
+}
+
+.bq-hero__title-accent {
+  color: var(--color-primary-700);
+}
+
+.bq-hero__subtitle {
+  font-size: clamp(1rem, 1.8vw, 1.15rem);
+  color: var(--color-slate-600);
+  max-width: 580px;
+  margin-bottom: 2.25rem;
+  line-height: 1.55;
+}
+
+.bq-hero__search-area {
+  width: 100%;
+  margin-bottom: 2.5rem;
+}
+
+/* Restrained Value Props */
+.bq-hero__value-props {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 1.25rem;
+  background-color: var(--color-slate-50);
+  border: 1px solid var(--color-slate-200);
+  border-radius: var(--radius-md);
+}
+
+.bq-hero__prop-item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.bq-hero__prop-icon {
+  color: var(--color-primary-700);
+  flex-shrink: 0;
+}
+
+.bq-hero__prop-text {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-slate-700);
+}
+
+.bq-hero__prop-divider {
+  width: 1px;
+  height: 14px;
+  background-color: var(--color-slate-300);
+}
+
+@media (max-width: 640px) {
+  .bq-hero {
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+
+  .bq-hero__value-props {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .bq-hero__prop-divider {
+    display: none;
+  }
+}

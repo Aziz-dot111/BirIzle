@@ -1,0 +1,191 @@
+.bq-business-cta-section {
+  padding-top: 4.5rem;
+  padding-bottom: 4.5rem;
+  background-color: var(--color-slate-50);
+}
+
+.bq-business-cta-card {
+  background-color: var(--color-primary-900);
+  border: 1px solid var(--color-primary-950);
+  border-radius: var(--radius-xl);
+  padding: clamp(2rem, 4vw, 3.5rem);
+  color: var(--color-white);
+  box-shadow: var(--shadow-md);
+}
+
+.bq-business-cta-content {
+  max-width: 820px;
+}
+
+.bq-business-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.775rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--color-primary-200);
+  margin-bottom: 1rem;
+}
+
+.bq-business-title {
+  font-size: clamp(1.75rem, 3.5vw, 2.35rem);
+  font-weight: 800;
+  color: var(--color-white);
+  line-height: 1.2;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
+}
+
+.bq-business-desc {
+  font-size: 1.05rem;
+  color: var(--color-primary-100);
+  line-height: 1.55;
+  margin-bottom: 2rem;
+}
+
+/* 3 Pillars */
+.bq-business-pillars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2.25rem;
+}
+
+.bq-business-pillar-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.bq-pillar-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background-color: rgba(255, 255, 255, 0.12);
+  color: var(--color-primary-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.bq-pillar-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-white);
+  margin-bottom: 0.2rem;
+}
+
+.bq-pillar-desc {
+  font-size: 0.8rem;
+  color: var(--color-primary-100);
+  line-height: 1.45;
+}
+
+/* Actions */
+.bq-business-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.bq-business-btn {
+  background-color: var(--color-white) !important;
+  color: var(--color-primary-900) !important;
+  border-color: var(--color-white) !important;
+}
+
+.bq-business-btn:hover {
+  background-color: var(--color-slate-100) !important;
+}
+
+.bq-business-stage-note {
+  font-size: 0.825rem;
+  color: var(--color-primary-200);
+}
+
+/* Modal */
+.bq-biz-modal {
+  background-color: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: 1.75rem;
+  max-width: 460px;
+  width: 100%;
+  position: relative;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-slate-200);
+}
+
+.bq-biz-modal__close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  color: var(--color-slate-400);
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.bq-biz-modal__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary-50);
+  color: var(--color-primary-700);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.bq-biz-modal__title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-slate-900);
+  margin-bottom: 0.35rem;
+}
+
+.bq-biz-modal__desc {
+  font-size: 0.875rem;
+  color: var(--color-slate-600);
+  margin-bottom: 1.25rem;
+}
+
+.bq-biz-modal__plan {
+  background-color: var(--color-slate-50);
+  border: 1px solid var(--color-slate-200);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  text-align: left;
+  margin-bottom: 1.25rem;
+}
+
+.bq-biz-modal__plan-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-primary-900);
+  margin-bottom: 0.5rem;
+}
+
+.bq-biz-modal__plan-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--color-slate-700);
+}
+
+.bq-biz-modal__btn {
+  width: 100%;
+}

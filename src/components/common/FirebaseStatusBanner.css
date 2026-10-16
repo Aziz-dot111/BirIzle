@@ -1,0 +1,118 @@
+.bq-firebase-banner {
+  font-size: 0.85rem;
+  border-bottom: 1px solid transparent;
+  transition: all var(--transition-fast);
+  z-index: 50;
+}
+
+.bq-firebase-banner--unconfigured {
+  background-color: var(--color-amber-50);
+  border-color: #FDE68A;
+  color: #92400E;
+}
+
+.bq-firebase-banner--ready {
+  background-color: var(--color-primary-50);
+  border-color: var(--color-primary-300);
+  color: var(--color-primary-900);
+}
+
+.bq-firebase-banner__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  gap: 1rem;
+}
+
+.bq-firebase-banner__left {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.bq-firebase-banner__icon.text-amber {
+  color: #D97706;
+  flex-shrink: 0;
+}
+
+.bq-firebase-banner__icon.text-green {
+  color: var(--color-primary-600);
+  flex-shrink: 0;
+}
+
+.bq-firebase-banner__message {
+  line-height: 1.4;
+}
+
+.bq-firebase-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.bq-firebase-banner__details-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.775rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.05);
+  color: inherit;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.bq-firebase-banner__details-btn:hover {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.bq-firebase-banner__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  color: inherit;
+  opacity: 0.7;
+  cursor: pointer;
+}
+
+.bq-firebase-banner__close:hover {
+  opacity: 1;
+}
+
+.bq-firebase-banner__details {
+  padding-top: 0.5rem;
+  padding-bottom: 0.85rem;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+  font-size: 0.8rem;
+}
+
+.bq-firebase-banner__details-desc {
+  margin-bottom: 0.5rem;
+}
+
+.bq-firebase-banner__details-desc code,
+.bq-firebase-banner__keys-list code {
+  background: rgba(0, 0, 0, 0.08);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.8em;
+}
+
+.bq-firebase-banner__keys-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin-bottom: 0.5rem;
+}
+
+.bq-firebase-banner__details-note {
+  font-style: italic;
+  opacity: 0.9;
+}

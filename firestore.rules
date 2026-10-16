@@ -1,0 +1,56 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for secure authentication and ownership
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Strict allowlist validation for user profile documents
+    // Prevents privilege escalation (e.g., adding role, isAdmin, permissions)
+    function isValidUserProfile(data) {
+      return data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'phoneNumber', 'createdAt', 'updatedAt'])
+        && data.uid is string
+        && data.uid == request.auth.uid
+        && data.email is string
+        && (data.displayName == null || (data.displayName is string && data.displayName.size() <= 60))
+        && (data.photoURL == null || data.photoURL is string)
+        && (data.phoneNumber == null || data.phoneNumber is string);
+    }
+
+    // User private profiles in /users/{userId}
+    match /users/{userId} {
+      // User can only read their own private profile
+      allow get: if isOwner(userId);
+      // Deny listing or scraping the entire user directory
+      allow list: if false;
+
+      // Creation allowed only by the document owner matching their auth UID
+      allow create: if isOwner(userId)
+                    && isValidUserProfile(request.resource.data)
+                    && request.resource.data.uid == userId;
+
+      // Updates allowed only on approved fields (displayName, updatedAt, photoURL, phoneNumber)
+      // Prevents modifying UID, email, or creation timestamp
+      allow update: if isOwner(userId)
+                    && isValidUserProfile(request.resource.data)
+                    && request.resource.data.uid == resource.data.uid
+                    && request.resource.data.email == resource.data.email
+                    && (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+
+      // Deny direct client deletion to preserve account records and audit integrity
+      allow delete: if false;
+    }
+
+    // DENY-BY-DEFAULT FOR ALL OTHER COLLECTIONS
+    // Future collections (products, stores, inventory, services) will be added in subsequent stages.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,65 @@
+/* BirQidir Design System Tokens - Premium Uzbek Universal Marketplace */
+:root {
+  /* Brand Green Palette (Deep Emerald) */
+  --color-primary-950: #022C22;
+  --color-primary-900: #064E3B; /* Deep Forest Green */
+  --color-primary-800: #065F46;
+  --color-primary-700: #047857; /* Brand Primary */
+  --color-primary-600: #059669; /* Accent Emerald */
+  --color-primary-500: #10B981;
+  --color-primary-400: #34D399;
+  --color-primary-200: #A7F3D0;
+  --color-primary-100: #D1FAE5;
+  --color-primary-50:  #ECFDF5; /* Subtle Green Tint */
+
+  /* Neutrals (Charcoal & Clean Grays) */
+  --color-white: #FFFFFF;
+  --color-slate-25: #FCFDFD;
+  --color-slate-50: #F8FAFC;  /* Very Light Neutral Background */
+  --color-slate-100: #F1F5F9; /* Subtle Component Background */
+  --color-slate-200: #E2E8F0; /* Clean Border Color */
+  --color-slate-300: #CBD5E1;
+  --color-slate-400: #94A3B8; /* Muted Text */
+  --color-slate-500: #64748B;
+  --color-slate-600: #475569; /* Secondary Body Text */
+  --color-slate-700: #334155;
+  --color-slate-800: #1E293B; /* Headings */
+  --color-slate-900: #0F172A; /* Primary Dark Charcoal Text */
+
+  /* Semantic Feedback (Restrained) */
+  --color-amber-500: #D97706;
+  --color-amber-50:  #FFFBEB;
+  --color-amber-200: #FDE68A;
+  --color-red-600:   #DC2626;
+  --color-red-500:   #EF4444;
+  --color-red-50:    #FEF2F2;
+  --color-red-200:   #FECACA;
+  --color-blue-600:  #2563EB;
+  --color-blue-50:   #EFF6FF;
+
+  /* Typography */
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Plus Jakarta Sans', var(--font-sans);
+
+  /* Shadows - Subtle & Realistic */
+  --shadow-xs: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-sm: 0 1px 3px 0 rgba(15, 23, 42, 0.07), 0 1px 2px -1px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.07), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+  --shadow-card-hover: 0 12px 20px -3px rgba(4, 120, 87, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.03);
+
+  /* Border Radii - Moderately Rounded */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Container */
+  --container-max-width: 1200px;
+}
