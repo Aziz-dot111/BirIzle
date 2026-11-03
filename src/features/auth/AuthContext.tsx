@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useState, useMemo, useCallback } from 'react';
+import React, { createContext, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import type { User } from 'firebase/auth';
 import type { UserProfile, FirebaseConfigStatus } from '@/types';
 import {
@@ -7,6 +7,8 @@ import {
   logOutUser,
   subscribeToAuthState,
   updateAuthDisplayName,
+  resendVerificationEmail,
+  reloadCurrentUserAndToken,
 } from '@/services/firebase/auth';
 import {
   getUserProfile,
@@ -21,6 +23,7 @@ export interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   isAuthenticated: boolean;
+  isEmailVerified: boolean;
   isConfigured: boolean;
   configStatus: FirebaseConfigStatus;
   login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
@@ -30,6 +33,8 @@ export interface AuthContextType {
     displayName?: string
   ) => Promise<{ success: boolean; error?: string; profileCreated?: boolean }>;
   logout: () => Promise<void>;
+  sendVerification: () => Promise<{ success: boolean; error?: string }>;
+  reloadUser: () => Promise<{ success: boolean; isVerified: boolean; error?: string }>;
   updateDisplayName: (newName: string) => Promise<{ success: boolean; error?: string }>;
   refreshProfile: () => Promise<void>;
   retryCreateProfile: () => Promise<{ success: boolean; error?: string }>;
@@ -41,9 +46,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const isRegisteringRef = useRef(false);
 
   const configStatus = useMemo(() => getFirebaseConfigStatus(), []);
   const isAuthenticated = Boolean(user);
+  const isEmailVerified = Boolean(user?.emailVerified);
 
   // Safely fetch or self-heal Firestore user profile
   const syncProfile = useCallback(async (currentUser: User) => {
@@ -51,8 +58,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const res = await getUserProfile(currentUser.uid);
       if (res.data) {
         setProfile(res.data);
-      } else {
-        // Self-healing path: profile document does not exist yet in Firestore
+      } else if (currentUser.emailVerified) {
+        // Self-healing path: create profile in Firestore once email verification is verified
         const created = await ensureUserProfileExists(
           currentUser.uid,
           currentUser.email || '',
@@ -77,7 +84,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = subscribeToAuthState(async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        await syncProfile(currentUser);
+        if (!isRegisteringRef.current) {
+          await syncProfile(currentUser);
+        }
       } else {
         setProfile(null);
       }
@@ -97,7 +106,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (result.data) {
       setUser(result.data);
-      await syncProfile(result.data);
+      if (result.data.emailVerified) {
+        await syncProfile(result.data);
+      } else {
+        const existing = await getUserProfile(result.data.uid);
+        if (existing.data) setProfile(existing.data);
+      }
     }
     setLoading(false);
     return { success: true };
@@ -105,36 +119,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (email: string, pass: string, displayName?: string) => {
     setLoading(true);
-    const result = await registerWithEmail(email, pass, displayName);
-    if (result.error) {
-      setLoading(false);
-      return { success: false, error: result.error };
-    }
-
-    let profileCreated = false;
-    if (result.data) {
-      setUser(result.data);
-
-      // Attempt creating profile in Firestore
-      const profileResult = await createUserProfile({
-        uid: result.data.uid,
-        email: result.data.email || email,
-        displayName: displayName || null,
-      });
-
-      if (profileResult.data) {
-        setProfile(profileResult.data);
-        profileCreated = true;
-      } else {
-        console.warn(
-          '[BirQidir Auth] Account created in Firebase Auth, but initial Firestore profile creation failed:',
-          profileResult.error
-        );
+    isRegisteringRef.current = true;
+    try {
+      const result = await registerWithEmail(email, pass, displayName);
+      if (result.error) {
+        setLoading(false);
+        return { success: false, error: result.error };
       }
-    }
 
-    setLoading(false);
-    return { success: true, profileCreated };
+      let profileCreated = false;
+      if (result.data) {
+        setUser(result.data);
+
+        // If email is already verified (rare in standard register), attempt profile write immediately
+        if (result.data.emailVerified) {
+          const profileResult = await createUserProfile({
+            uid: result.data.uid,
+            email: result.data.email || email,
+            displayName: displayName?.trim() || null,
+          });
+
+          if (profileResult.data) {
+            setProfile(profileResult.data);
+            profileCreated = true;
+          }
+        }
+      }
+
+      setLoading(false);
+      return { success: true, profileCreated };
+    } finally {
+      isRegisteringRef.current = false;
+    }
   };
 
   const logout = async () => {
@@ -145,10 +161,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   };
 
+  const sendVerification = async () => {
+    if (!user) {
+      return { success: false, error: 'Foydalanuvchi tizimga kirmagan.' };
+    }
+    const res = await resendVerificationEmail(user);
+    if (res.error) {
+      return { success: false, error: res.error };
+    }
+    return { success: true };
+  };
+
+  const reloadUser = async () => {
+    if (!user) {
+      return { success: false, isVerified: false, error: 'Foydalanuvchi tizimga kirmagan.' };
+    }
+    const res = await reloadCurrentUserAndToken();
+    if (res.error) {
+      return { success: false, isVerified: Boolean(user.emailVerified), error: res.error };
+    }
+
+    if (res.data) {
+      const refreshedUser = res.data.user;
+      setUser(refreshedUser);
+
+      // Once verified, ensure the Firestore profile exists
+      if (res.data.isEmailVerified) {
+        await syncProfile(refreshedUser);
+      }
+
+      return { success: true, isVerified: res.data.isEmailVerified };
+    }
+
+    return { success: false, isVerified: false };
+  };
+
   // Synchronize display name across both Firebase Auth and Cloud Firestore
   const updateDisplayName = async (newName: string) => {
     if (!user) {
       return { success: false, error: 'Foydalanuvchi tizimga kirmagan.' };
+    }
+
+    if (!user.emailVerified) {
+      return {
+        success: false,
+        error: 'Profilni tahrirlash uchun avval elektron pochtangizni tasdiqlang.',
+      };
     }
 
     // 1. Update Cloud Firestore
@@ -193,11 +251,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     profile,
     loading,
     isAuthenticated,
+    isEmailVerified,
     isConfigured: isFirebaseReady,
     configStatus,
     login,
     register,
     logout,
+    sendVerification,
+    reloadUser,
     updateDisplayName,
     refreshProfile,
     retryCreateProfile,

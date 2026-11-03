@@ -1,0 +1,338 @@
+/* ==========================================================================
+   MerchantDashboardPage Styling
+   ========================================================================== */
+
+.bq-merchant-page {
+  padding-top: 2.5rem;
+  padding-bottom: 5rem;
+  background-color: var(--color-slate-50, #f8fafc);
+  min-height: calc(100vh - 180px);
+}
+
+.bq-merchant-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.bq-merchant-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background-color: var(--color-primary-50, #ecfdf5);
+  color: var(--color-primary-800, #065f46);
+  border: 1px solid var(--color-primary-200, #a7f3d0);
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-full, 9999px);
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.bq-merchant-title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--color-slate-900, #0f172a);
+  letter-spacing: -0.02em;
+}
+
+.bq-merchant-subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.95rem;
+  color: var(--color-slate-500, #64748b);
+  max-width: 600px;
+}
+
+/* Email Verification Barrier Card */
+.bq-merchant-verify-card {
+  background-color: #ffffff;
+  border: 1px solid #fde68a;
+  border-left: 4px solid #f59e0b;
+  border-radius: var(--radius-xl, 1rem);
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  box-shadow: 0 4px 12px -2px rgba(245, 158, 11, 0.08);
+  margin-bottom: 2rem;
+}
+
+.bq-merchant-verify-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: #fef3c7;
+  color: #b45309;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bq-merchant-verify-content h3 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #92400e;
+}
+
+.bq-merchant-verify-content p {
+  margin: 0.4rem 0 0.75rem;
+  font-size: 0.9rem;
+  color: #78350f;
+  line-height: 1.5;
+}
+
+.bq-merchant-verify-email {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  color: #1e293b;
+  background-color: #fef3c7;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-md, 0.5rem);
+  font-size: 0.82rem;
+  margin-bottom: 0.75rem;
+}
+
+.bq-merchant-verify-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  margin-bottom: 0.75rem;
+}
+
+.bq-merchant-verify-notice--success {
+  background-color: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.bq-merchant-verify-notice--error {
+  background-color: #fff1f2;
+  color: #9f1239;
+  border: 1px solid #fecdd3;
+}
+
+.bq-merchant-verify-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+/* Empty State Card */
+.bq-merchant-empty-card {
+  background-color: #ffffff;
+  border: 1.5px dashed var(--color-slate-300, #cbd5e1);
+  border-radius: var(--radius-2xl, 1.25rem);
+  padding: 4rem 2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+}
+
+.bq-merchant-empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background-color: var(--color-slate-100, #f1f5f9);
+  color: var(--color-slate-400, #94a3b8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.bq-merchant-empty-card h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-slate-900, #0f172a);
+}
+
+.bq-merchant-empty-card p {
+  margin: 0 0 1rem;
+  font-size: 0.92rem;
+  color: var(--color-slate-500, #64748b);
+  max-width: 440px;
+}
+
+/* Dashboard Layout */
+.bq-merchant-dashboard-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.bq-merchant-section-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.bq-merchant-col-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--color-slate-900, #0f172a);
+}
+
+.bq-merchant-stores-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.25rem;
+}
+
+.bq-merchant-store-item {
+  background-color: #ffffff;
+  border: 1px solid var(--color-slate-200, #e2e8f0);
+  border-radius: var(--radius-xl, 1rem);
+  padding: 1.25rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.bq-merchant-store-item:hover {
+  border-color: var(--color-primary-400, #34d399);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px -2px rgba(4, 120, 87, 0.08);
+}
+
+.bq-merchant-store-item--selected {
+  border-color: var(--color-primary-600, #059669);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25), 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.bq-merchant-store-item__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.bq-merchant-store-item__name {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-slate-900, #0f172a);
+}
+
+.bq-merchant-store-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.bq-store-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-full, 9999px);
+  white-space: nowrap;
+}
+
+.bq-store-status-badge--verified {
+  background-color: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.bq-store-status-badge--pending {
+  background-color: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.bq-store-status-badge--active {
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.bq-store-status-badge--archived {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+
+.bq-merchant-store-item__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.bq-merchant-meta-line {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  color: var(--color-slate-600, #475569);
+}
+
+.bq-merchant-cat-pill {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-primary-700, #047857);
+  background-color: var(--color-primary-50, #ecfdf5);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.bq-merchant-hours-text {
+  font-size: 0.76rem;
+  color: var(--color-slate-500, #64748b);
+}
+
+.bq-merchant-store-item__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--color-slate-100, #f1f5f9);
+  color: var(--color-slate-500, #64748b);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.bq-merchant-store-item--selected .bq-merchant-store-item__foot {
+  color: var(--color-primary-700, #047857);
+  font-weight: 700;
+}
+
+.bq-merchant-loading,
+.bq-merchant-error {
+  background-color: #ffffff;
+  border: 1px solid var(--color-slate-200, #e2e8f0);
+  border-radius: var(--radius-xl, 1rem);
+  padding: 3rem 1.5rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}

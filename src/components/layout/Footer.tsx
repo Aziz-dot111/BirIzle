@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ShieldCheck, Database, Layers } from 'lucide-react';
+import { ShieldCheck, Database, Layers } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import './Footer.css';
 
@@ -24,7 +24,12 @@ export const Footer: React.FC = () => {
           <div className="bq-footer__brand-col">
             <Link to="/" className="bq-footer__brand">
               <div className="bq-footer__logo-badge">
-                <Search size={18} strokeWidth={2.5} />
+                <svg viewBox="0 0 32 32" fill="none" className="bq-footer__logo-svg" aria-hidden="true">
+                  <rect width="32" height="32" rx="8" fill="#047857" />
+                  <circle cx="14" cy="14" r="6" stroke="#FFFFFF" strokeWidth="2.5" />
+                  <path d="M18.5 18.5L24 24" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" />
+                  <circle cx="14" cy="14" r="2.5" fill="#34D399" />
+                </svg>
               </div>
               <span className="bq-footer__brand-title">BirQidir</span>
             </Link>
@@ -33,7 +38,7 @@ export const Footer: React.FC = () => {
               do‘konlarni topish uchun universal milliy marketplace.
             </p>
             <div className="bq-footer__badge">
-              1-Bosqich: Loyiha poydevori &amp; Firebase
+              Loyiha poydevori &amp; Firebase arxitekturasi faol
             </div>
           </div>
 

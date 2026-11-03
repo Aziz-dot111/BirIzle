@@ -23,6 +23,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
   ...props
 }, ref) => {
   const [showPassword, setShowPassword] = useState(false);
+  const reactId = React.useId();
   const inputId =
     id ||
     (label
@@ -30,9 +31,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
           .toLowerCase()
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/(^-|-$)/g, '')}`
-      : undefined);
+      : `input-${reactId.replace(/:/g, '')}`);
   const isPassword = type === 'password';
   const effectiveType = isPassword && showPassword ? 'text' : type;
+  const hasRightIcon = Boolean(isPassword && showPasswordToggle);
 
   return (
     <div className={`bq-input-wrapper ${error ? 'bq-input-wrapper--error' : ''} ${className}`}>
@@ -49,14 +51,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(({
           id={inputId}
           type={effectiveType}
           className={`bq-input ${leftIcon ? 'bq-input--has-left-icon' : ''} ${
-            isPassword || showPasswordToggle ? 'bq-input--has-right-icon' : ''
+            hasRightIcon ? 'bq-input--has-right-icon' : ''
           }`}
           required={required}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined}
           {...props}
         />
-        {isPassword && showPasswordToggle && (
+        {hasRightIcon && (
           <button
             type="button"
             className="bq-input__toggle-password"

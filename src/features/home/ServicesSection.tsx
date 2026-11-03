@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Wrench,
   Smartphone,
@@ -61,6 +61,17 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
 
 export const ServicesSection: React.FC = () => {
   const [selectedService, setSelectedService] = useState<ServiceCategory | null>(null);
+
+  // Close modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedService) {
+        setSelectedService(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedService]);
 
   return (
     <section id="services-section" className="bq-services-section">

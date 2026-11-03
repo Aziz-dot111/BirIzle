@@ -2,53 +2,165 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions for secure authentication and ownership
+    // =========================================================================
+    // HELPER FUNCTIONS & AUTHENTICATION CHECKS
+    // =========================================================================
+
     function isAuthenticated() {
       return request.auth != null;
     }
 
+    // Require verified email address for user profile write operations
+    function isEmailVerified() {
+      return isAuthenticated() && request.auth.token.email_verified == true;
+    }
+
+    // Ensure the requester owns the target document UID
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Strict allowlist validation for user profile documents
-    // Prevents privilege escalation (e.g., adding role, isAdmin, permissions)
-    function isValidUserProfile(data) {
-      return data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'phoneNumber', 'createdAt', 'updatedAt'])
-        && data.uid is string
-        && data.uid == request.auth.uid
-        && data.email is string
-        && (data.displayName == null || (data.displayName is string && data.displayName.size() <= 60))
-        && (data.photoURL == null || data.photoURL is string)
-        && (data.phoneNumber == null || data.phoneNumber is string);
+    // Administrative privileges are strictly granted via server-side Custom Claims.
+    // SECURITY RULE: An ordinary user with email_verified == true is NOT an administrator!
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.get('admin', false) == true;
     }
 
-    // User private profiles in /users/{userId}
+    // =========================================================================
+    // FIELD-LEVEL VALIDATION & SANITIZATION RULES
+    // =========================================================================
+
+    // Display Name: optional, min 2 chars, max 60 chars
+    function isValidDisplayName(data) {
+      return !('displayName' in data) 
+        || data.displayName == null 
+        || (data.displayName is string && data.displayName.size() >= 2 && data.displayName.size() <= 60);
+    }
+
+    // Photo URL: optional, max 500 chars, must be valid http/https URL
+    function isValidPhotoURL(data) {
+      return !('photoURL' in data) 
+        || data.photoURL == null 
+        || (data.photoURL is string && data.photoURL.size() <= 500 && data.photoURL.matches('^https?://.*'));
+    }
+
+    // Phone Number: optional, 7-20 chars, sanitized international/local phone format
+    function isValidPhoneNumber(data) {
+      return !('phoneNumber' in data) 
+        || data.phoneNumber == null 
+        || (data.phoneNumber is string && data.phoneNumber.size() >= 7 && data.phoneNumber.size() <= 20 && data.phoneNumber.matches('^\\+?[0-9\\s\\-\\(\\)]{7,20}$'));
+    }
+
+    // Document Keys Allowlist: Prevents privilege escalation (e.g. role, isAdmin, permissions)
+    function hasOnlyValidProfileKeys(data) {
+      return data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'phoneNumber', 'createdAt', 'updatedAt']);
+    }
+
+    // Mandatory Keys on Creation
+    function hasRequiredProfileKeys(data) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt', 'updatedAt']);
+    }
+
+    // Timestamps: On creation, must use serverTimestamp()
+    function isValidCreateTimestamps(data) {
+      return data.createdAt is timestamp && data.createdAt == request.time
+          && data.updatedAt is timestamp && data.updatedAt == request.time;
+    }
+
+    // Timestamps: On update, updatedAt must be serverTimestamp() and createdAt must be immutable
+    function isValidUpdateTimestamps(data, existing) {
+      return data.updatedAt is timestamp && data.updatedAt == request.time
+          && data.createdAt == existing.createdAt;
+    }
+
+    // Comprehensive profile integrity validation
+    function isValidUserProfile(data) {
+      return hasOnlyValidProfileKeys(data)
+          && data.uid is string
+          && data.uid == request.auth.uid
+          && data.email is string
+          && data.email == request.auth.token.email
+          && isValidDisplayName(data)
+          && isValidPhotoURL(data)
+          && isValidPhoneNumber(data);
+    }
+
+    // =========================================================================
+    // USER PROFILES COLLECTION: /users/{userId}
+    // =========================================================================
+
     match /users/{userId} {
-      // User can only read their own private profile
+      // 1. READ: User can only read their own private profile
       allow get: if isOwner(userId);
-      // Deny listing or scraping the entire user directory
+
+      // Deny bulk listing or scraping of the entire user directory
       allow list: if false;
 
-      // Creation allowed only by the document owner matching their auth UID
+      // 2. CREATE: Allowed only by the document owner with a verified email
+      // - Must match auth UID and auth token email
+      // - Must pass strict format validation and key allowlist (no role/isAdmin injection)
+      // - Must use server timestamps
       allow create: if isOwner(userId)
+                    && isEmailVerified()
+                    && request.resource.data.uid == userId
+                    && hasRequiredProfileKeys(request.resource.data)
                     && isValidUserProfile(request.resource.data)
-                    && request.resource.data.uid == userId;
+                    && isValidCreateTimestamps(request.resource.data);
 
-      // Updates allowed only on approved fields (displayName, updatedAt, photoURL, phoneNumber)
-      // Prevents modifying UID, email, or creation timestamp
+      // 3. UPDATE: Allowed only on permitted fields by verified document owner
+      // - Affected keys restricted strictly to: displayName, updatedAt, photoURL, phoneNumber
+      // - UID, email, and createdAt are strictly IMMUTABLE
+      // - Role / permission escalation is blocked by hasOnlyValidProfileKeys()
       allow update: if isOwner(userId)
+                    && isEmailVerified()
+                    && request.resource.data.uid == userId
                     && isValidUserProfile(request.resource.data)
+                    && isValidUpdateTimestamps(request.resource.data, resource.data)
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'updatedAt', 'photoURL', 'phoneNumber'])
                     && request.resource.data.uid == resource.data.uid
-                    && request.resource.data.email == resource.data.email
-                    && (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+                    && request.resource.data.email == resource.data.email;
 
-      // Deny direct client deletion to preserve account records and audit integrity
+      // 4. DELETE: Deny client-side deletion to preserve audit trail and account integrity
       allow delete: if false;
     }
 
+    // =========================================================================
+    // STORES CATALOG: /stores/{storeId}
+    // =========================================================================
+    match /stores/{storeId} {
+      // Public read access for finding local stores and coordinates in Nukus
+      allow read: if true;
+
+      // Mutations strictly reserved for verified server administrators
+      allow write: if isAdmin();
+    }
+
+    // =========================================================================
+    // PRODUCTS CATALOG: /products/{productId}
+    // =========================================================================
+    match /products/{productId} {
+      // Public read access for browsing and searching marketplace products
+      allow read: if true;
+
+      // Mutations strictly reserved for verified server administrators
+      allow write: if isAdmin();
+    }
+
+    // =========================================================================
+    // INVENTORY OFFERS: /offers/{offerId}
+    // =========================================================================
+    match /offers/{offerId} {
+      // Public read access for real-time price comparisons across stores
+      allow read: if true;
+
+      // Mutations strictly reserved for verified server administrators
+      // (Merchant scoped updates will be introduced with store claim in Stage 4)
+      allow write: if isAdmin();
+    }
+
+    // =========================================================================
     // DENY-BY-DEFAULT FOR ALL OTHER COLLECTIONS
-    // Future collections (products, stores, inventory, services) will be added in subsequent stages.
+    // =========================================================================
     match /{document=**} {
       allow read, write: if false;
     }

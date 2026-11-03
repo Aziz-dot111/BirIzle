@@ -75,5 +75,19 @@ describe('Validation Utilities', () => {
       expect(res.isValid).toBe(true);
       expect(Object.keys(res.errors).length).toBe(0);
     });
+
+    it('enforces displayName when requireDisplayName option is enabled', () => {
+      const res = validateRegistrationForm(
+        {
+          displayName: '',
+          email: 'aziz@example.com',
+          password: 'securePassword123',
+          confirmPassword: 'securePassword123',
+        },
+        { requireDisplayName: true }
+      );
+      expect(res.isValid).toBe(false);
+      expect(res.errors.displayName).toBeDefined();
+    });
   });
 });

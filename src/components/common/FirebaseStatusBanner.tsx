@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Database, X } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks';
 import './FirebaseStatusBanner.css';
 
 export const FirebaseStatusBanner: React.FC = () => {
@@ -9,7 +9,7 @@ export const FirebaseStatusBanner: React.FC = () => {
   const [isDismissed, setIsDismissed] = useState(false);
 
   // In production, we don't display debug banners unless needed
-  const isDev = import.meta.env.DEV;
+  const isDev = Boolean(import.meta.env.DEV);
 
   if (isDismissed || (!isDev && isConfigured)) {
     return null;
@@ -27,7 +27,7 @@ export const FirebaseStatusBanner: React.FC = () => {
           <span className="bq-firebase-banner__message">
             {isConfigured ? (
               <>
-                <strong>Firebase:</strong> Sozlangan {configStatus.projectId && `(Loyiha: ${configStatus.projectId})`}
+                <strong>Firebase:</strong> Sozlangan {configStatus?.projectId && `(Loyiha: ${configStatus.projectId})`}
               </>
             ) : (
               <>
@@ -69,9 +69,9 @@ export const FirebaseStatusBanner: React.FC = () => {
             <code>.env.local</code> nomli fayl yarating va quyidagi o‘zgaruvchilarni Firebase konsolidan ko‘chirib joylang:
           </p>
           <ul className="bq-firebase-banner__keys-list">
-            {configStatus.missingKeys.map((key) => (
-              <li key={key}>
-                <code>{key}</code>
+            {(configStatus?.missingKeys || []).map((missingKey: string) => (
+              <li key={missingKey}>
+                <code>{missingKey}</code>
               </li>
             ))}
           </ul>

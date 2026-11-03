@@ -1,6 +1,7 @@
 import React from 'react';
 import { HeroSection } from '@/features/home/HeroSection';
 import { CategoryGrid } from '@/features/home/CategoryGrid';
+import { FeaturedProductsSection } from '@/features/home/FeaturedProductsSection';
 import { PriceComparisonSection } from '@/features/home/PriceComparisonSection';
 import { ServicesSection } from '@/features/home/ServicesSection';
 import { NearbyStoresSection } from '@/features/home/NearbyStoresSection';
@@ -11,6 +12,7 @@ export const HomePage: React.FC = () => {
     <div className="bq-home-page">
       <HeroSection />
       <CategoryGrid />
+      <FeaturedProductsSection />
       <PriceComparisonSection />
       <ServicesSection />
       <NearbyStoresSection />

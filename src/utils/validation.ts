@@ -59,12 +59,15 @@ export function validateDisplayName(name?: string | null): ValidationResult {
 /**
  * Validate full registration form
  */
-export function validateRegistrationForm(params: {
-  email: string;
-  password: string;
-  confirmPassword: string;
-  displayName?: string;
-}): { isValid: boolean; errors: Record<string, string> } {
+export function validateRegistrationForm(
+  params: {
+    email: string;
+    password: string;
+    confirmPassword: string;
+    displayName?: string;
+  },
+  options: { requireDisplayName?: boolean } = {}
+): { isValid: boolean; errors: Record<string, string> } {
   const errors: Record<string, string> = {};
 
   const emailRes = validateEmail(params.email);
@@ -81,9 +84,13 @@ export function validateRegistrationForm(params: {
     errors.confirmPassword = 'Kiritilgan parollar bir-biriga mos kelmadi.';
   }
 
-  const nameRes = validateDisplayName(params.displayName);
-  if (!nameRes.isValid && nameRes.error) {
-    errors.displayName = nameRes.error;
+  if (options.requireDisplayName && (!params.displayName || !params.displayName.trim())) {
+    errors.displayName = 'To‘liq ism va familiyangizni kiriting.';
+  } else {
+    const nameRes = validateDisplayName(params.displayName);
+    if (!nameRes.isValid && nameRes.error) {
+      errors.displayName = nameRes.error;
+    }
   }
 
   return {

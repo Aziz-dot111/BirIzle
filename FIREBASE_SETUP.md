@@ -109,7 +109,9 @@ service cloud.firestore {
 
       allow update: if isOwner(userId)
                     && isValidUserProfile(request.resource.data)
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'updatedAt', 'photoURL', 'phoneNumber'])
                     && request.resource.data.uid == resource.data.uid
+                    && request.resource.data.email == resource.data.email
                     && (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt);
 
       allow delete: if false;

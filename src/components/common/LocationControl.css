@@ -1,0 +1,204 @@
+/* ==========================================================================
+   LocationControl Styling
+   ========================================================================== */
+
+.bq-location-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.bq-location-control__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.bq-location-control__left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.bq-location-gps-btn {
+  box-shadow: 0 2px 8px rgba(4, 120, 87, 0.2);
+}
+
+.bq-location-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background-color: var(--color-primary-50, #ecfdf5);
+  border: 1px solid var(--color-primary-200, #a7f3d0);
+  border-radius: var(--radius-full, 9999px);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-primary-800, #065f46);
+}
+
+.bq-location-clear-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-slate-400, #94a3b8);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  border-radius: 50%;
+  margin-left: 2px;
+  transition: all 0.15s ease;
+}
+
+.bq-location-clear-btn:hover {
+  background-color: var(--color-primary-200, #a7f3d0);
+  color: var(--color-slate-700, #334155);
+}
+
+/* Manual City Picker */
+.bq-location-city-picker {
+  background-color: var(--color-slate-50, #f8fafc);
+  border: 1px solid var(--color-slate-200, #e2e8f0);
+  border-radius: var(--radius-lg, 0.75rem);
+  padding: 0.75rem 1rem;
+}
+
+.bq-location-city-picker__label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-slate-600, #475569);
+  margin-bottom: 0.5rem;
+}
+
+.bq-location-city-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.bq-location-city-chip {
+  background-color: #ffffff;
+  border: 1px solid var(--color-slate-200, #e2e8f0);
+  border-radius: var(--radius-full, 9999px);
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-slate-700, #334155);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bq-location-city-chip:hover {
+  border-color: var(--color-primary-400, #34d399);
+  color: var(--color-primary-700, #047857);
+  background-color: var(--color-primary-50, #ecfdf5);
+}
+
+.bq-location-city-chip--active {
+  background-color: var(--color-primary-600, #059669);
+  border-color: var(--color-primary-600, #059669);
+  color: #ffffff;
+}
+
+/* Error Alert */
+.bq-location-error-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  background-color: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: var(--radius-lg, 0.75rem);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.82rem;
+  color: #9f1239;
+}
+
+.bq-location-error-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.bq-location-error-content {
+  flex: 1;
+}
+
+.bq-location-error-text {
+  margin: 0;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.bq-location-error-hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  color: #be123c;
+}
+
+.bq-location-error-dismiss {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #be123c;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.bq-location-error-dismiss:hover {
+  background-color: #fecdd3;
+}
+
+/* Radius Pills */
+.bq-location-radius-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  padding-top: 0.25rem;
+}
+
+.bq-location-radius-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-slate-600, #475569);
+}
+
+.bq-location-radius-pills {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.bq-radius-pill {
+  background-color: var(--color-slate-100, #f1f5f9);
+  border: 1px solid var(--color-slate-200, #e2e8f0);
+  border-radius: var(--radius-full, 9999px);
+  padding: 0.2rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-slate-600, #475569);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bq-radius-pill:hover {
+  background-color: var(--color-slate-200, #e2e8f0);
+  color: var(--color-slate-900, #0f172a);
+}
+
+.bq-radius-pill--active {
+  background-color: var(--color-primary-600, #059669);
+  border-color: var(--color-primary-600, #059669);
+  color: #ffffff;
+}

@@ -81,6 +81,17 @@ export const LoginForm: React.FC = () => {
   return (
     <div className="bq-auth-card animate-fade-in">
       <div className="bq-auth-card__header">
+        <Link to="/" className="bq-auth-card__brand" aria-label="Bosh sahifaga qaytish">
+          <div className="bq-auth-card__logo-badge">
+            <svg viewBox="0 0 32 32" fill="none" className="bq-auth-card__logo-svg" aria-hidden="true">
+              <rect width="32" height="32" rx="8" fill="#047857" />
+              <circle cx="14" cy="14" r="6" stroke="#FFFFFF" strokeWidth="2.5" />
+              <path d="M18.5 18.5L24 24" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" />
+              <circle cx="14" cy="14" r="2.5" fill="#34D399" />
+            </svg>
+          </div>
+          <span className="bq-auth-card__brand-title">BirQidir</span>
+        </Link>
         <h2 className="bq-auth-card__title">Tizimga kirish</h2>
         <p className="bq-auth-card__subtitle">
           BirQidir platformasidagi shaxsiy kabinetingizga kiring

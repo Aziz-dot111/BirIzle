@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Tv,
   Laptop,
@@ -29,7 +30,7 @@ const CATEGORIES: CategoryItem[] = [
   {
     id: 'electronics',
     name: 'Elektronika',
-    itemCountDesc: 'Televizorlar, audio va gadjetlar',
+    itemCountDesc: 'Televizorlar, audio va aqlli gadjetlar',
     icon: <Tv size={22} />,
   },
   {
@@ -89,7 +90,19 @@ const CATEGORIES: CategoryItem[] = [
 ];
 
 export const CategoryGrid: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedCat, setSelectedCat] = useState<CategoryItem | null>(null);
+
+  // Close modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedCat) {
+        setSelectedCat(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedCat]);
 
   return (
     <section id="categories-section" className="bq-categories-section">
@@ -118,9 +131,10 @@ export const CategoryGrid: React.FC = () => {
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
-                  setSelectedCat(cat)}
+                  setSelectedCat(cat);
+                }
               }}
-              aria-label={`${cat.name} toifasi`}
+              aria-label={`${cat.name} toifasi: ${cat.itemCountDesc}`}
             >
               <div className="bq-cat-card__icon-box">
                 {cat.icon}
@@ -129,8 +143,8 @@ export const CategoryGrid: React.FC = () => {
                 <h3 className="bq-cat-card__title">{cat.name}</h3>
                 <p className="bq-cat-card__desc">{cat.itemCountDesc}</p>
               </div>
-              <div className="bq-cat-card__action">
-                <ArrowRight size={15} className="bq-cat-card__arrow" />
+              <div className="bq-cat-card__action" aria-hidden="true">
+                <ArrowRight size={16} className="bq-cat-card__arrow" />
               </div>
             </Card>
           ))}
@@ -176,17 +190,33 @@ export const CategoryGrid: React.FC = () => {
               </p>
             </div>
 
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => setSelectedCat(null)}
-              className="bq-cat-modal__btn"
-            >
-              Tushunarli
-            </Button>
+            <div className="bq-cat-modal__actions" style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
+              <Button
+                variant="outline"
+                size="md"
+                onClick={() => setSelectedCat(null)}
+                style={{ flex: 1 }}
+              >
+                Yopish
+              </Button>
+              <Button
+                variant="primary"
+                size="md"
+                onClick={() => {
+                  const catId = selectedCat.id;
+                  setSelectedCat(null);
+                  navigate(`/search?category=${encodeURIComponent(catId)}`);
+                }}
+                rightIcon={<ArrowRight size={16} />}
+                style={{ flex: 1.5 }}
+              >
+                Mahsulotlarni ko‘rish
+              </Button>
+            </div>
           </div>
         </div>
       )}
     </section>
   );
 };
+

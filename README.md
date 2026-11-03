@@ -88,59 +88,111 @@ Brauzeringizda oching: **`http://localhost:3000`**
 
 ---
 
-## 🔥 Firebase sozlash bo‘yicha to‘liq bosqichma-bosqich qo‘llanma
+## 🔥 Firebase sozlash bo‘yicha to‘liq bosqichma-bosqich qo‘llanma (8 Bosqich)
 
-Haqiqiy Firebase loyihangizni ulash uchun quyidagi amallarni bajaring:
+Haqiqiy Firebase loyihangizni ulash va autentifikatsiyani ishga tushirish uchun quyidagi 8 ta bosqichni ketma-ket bajaring:
 
-### 1. Firebase Console-ga kirish
-Brauzerda [https://console.firebase.google.com/](https://console.firebase.google.com/) sahifasiga kiring va Google akkauntingiz bilan tizimga kiring.
+### 1. Firebase Console-ga kirish (Opening Firebase Console)
+Brauzeringizda **[https://console.firebase.google.com/](https://console.firebase.google.com/)** manziliga o‘ting va shaxsiy Google hisobingiz orqali tizimga kiring.
 
-### 2. Loyiha tanlash yoki yangi loyiha yaratish
-- **Add project** (Loyiha qo‘shish) tugmasini bosing.
-- Loyihaga nom bering (masalan: `birqidir-uz`).
-- Google Analytics xohishingizga ko‘ra yoqing yoki o‘chirib qoldiring, so‘ng **Create project** ni bosing.
+### 2. Loyiha tanlash yoki yangi loyiha yaratish (Selecting/Creating Firebase Project)
+- Agar sizda allaqachon mavjud Firebase loyihasi bo‘lsa, uni ro‘yxatdan tanlang.
+- Yangi loyiha ochish uchun **"Add project"** (Loyiha qo‘shish) tugmasini bosing:
+  - Loyihaga nom bering (masalan: `birqidir-app`).
+  - Google Analytics ni xohishingizga ko‘ra yoqing yoki o‘chirib qoldiring.
+  - **"Create project"** tugmasini bosing va jarayon yakunlanishini kuting.
 
-### 3. Veb-ilova (Web App) ro‘yxatdan o‘tkazish
-- Loyiha boshqaruv panelida veb ikonkasini (`</>`) bosing.
-- Ilovaga nom bering: `BirQidir Web`.
-- **Register app** tugmasini bosing.
-- Ekranda paydo bo‘lgan `firebaseConfig` parametrlaridan (`apiKey`, `authDomain`, `projectId`, `storageBucket`, `messagingSenderId`, `appId`) nusxa olib, loyihangizdagi `.env.local` fayliga joylashtiring.
+### 3. Veb-ilovani ro‘yxatdan o‘tkazish (Registering a Web App)
+- Loyihaning asosiy sahifasida (Project Overview) veb ikonkasini (**`</>`**) bosing (yoki **Project Settings** -> **General** -> **Your apps** bo‘limiga o‘ting).
+- Ilova nomini kiriting: `BirQidir Web`.
+- *"Firebase Hosting"* ni belgilash shart emas.
+- **"Register app"** tugmasini bosing.
+- Ekranda ko‘rsatilgan `firebaseConfig` konfiguratsiya parametrlaridan quyidagi kalitlarni nusxalashga tayyorlab oling:
+  - `apiKey`
+  - `authDomain`
+  - `projectId`
+  - `storageBucket`
+  - `messagingSenderId`
+  - `appId`
 
-### 4. Email/Password autentifikatsiyasini yoqish
-- Chap menyudan **Build** -> **Authentication** bo‘limiga kiring.
-- **Get started** tugmasini bosing.
-- **Sign-in method** ro‘yxatidan **Email/Password** qatorini tanlang.
-- **Enable** holatiga o‘tkazing va **Save** tugmasini bosing.
+### 4. Email/Password autentifikatsiyasini yoqish (Enabling Email/Password Auth)
+- Chap menyudagi **Build** bo‘limidan **Authentication** sahifasiga kiring.
+- **"Get started"** tugmasini bosing.
+- **"Sign-in method"** (Kirish usullari) yorlig‘iga o‘ting.
+- Ro‘yxatdan **"Email/Password"** qatorini tanlang.
+- Birinchi kalitni — **"Enable"** holatiga o‘tkazing (Email link / passwordless ni o‘chiq qoldiring).
+- **"Save"** (Saqlash) tugmasini bosing.
 
-### 5. Cloud Firestore ma’lumotlar bazasini yaratish
-- Chap menyudan **Build** -> **Firestore Database** bo‘limiga kiring.
-- **Create database** tugmasini bosing.
-- Xavfsizlik qoidalarini so‘raganda **Start in production mode** ni tanlang (qoidalarimiz baribir loyihada tayyor).
-- Bazaning geolokatsiyasini tanlang (masalan, `eur3 (europe-west)` yoki `asia-northeast3`).
-- **Create** tugmasini bosing.
+### 5. Cloud Firestore ma’lumotlar bazasini yaratish (Creating Cloud Firestore DB)
+- Chap menyudagi **Build** bo‘limidan **Firestore Database** sahifasiga o‘ting.
+- **"Create database"** tugmasini bosing.
+- Database ID `(default)` holatida qoladi.
+- Xavfsizlik qoidalarini tanlashda **"Start in production mode"** ni tanlang (loyihamiz xavfsiz qoidalarni o‘z ichiga olgan).
+- Bazaning server joylashuvini tanlang (masalan, `eur3 (europe-west)` yoki O‘zbekistonga yaqin boshqa mintaqa).
+- **"Create"** tugmasini bosing.
 
-### 6. Xavfsizlik qoidalarini (Security Rules) kiritish
-- Firestore sahifasida **Rules** yorlig‘iga o‘ting.
-- Loyihamizdagi `firestore.rules` fayli matnini to‘liq nusxalab, u yerdagi matn o‘rniga qo‘ying.
-- **Publish** tugmasini bosing.
+### 6. Mahalliy atrof-muhit o‘zgaruvchilarini sozlash (Setting Environment Variables)
+- Loyihaning asosiy ildiz papkasida `.env.example` shablonidan nusxa olib `.env.local` nomli yangi fayl yarating:
+  ```cmd
+  copy .env.example .env.local
+  ```
+  *(PowerShell da: `Copy-Item .env.example .env.local`)*
+- Faylni matn muharririda ochib, 3-bosqichda olingan haqiqiy qiymatlar bilan to‘ldiring:
+  ```env
+  VITE_FIREBASE_API_KEY=AIzaSy...
+  VITE_FIREBASE_AUTH_DOMAIN=sizning-loyihangiz.firebaseapp.com
+  VITE_FIREBASE_PROJECT_ID=sizning-loyihangiz
+  VITE_FIREBASE_STORAGE_BUCKET=sizning-loyihangiz.appspot.com
+  VITE_FIREBASE_MESSAGING_SENDER_ID=123456789012
+  VITE_FIREBASE_APP_ID=1:123456789012:web:abcdef123456
+  ```
+- > 🔒 **Xavfsizlik eslatmasi:** `.env.local` faylini hech qachon Git tizimiga qo‘shmang (u `.gitignore` ga kiritilgan). Hech qachon shaxsiy server kalitlarini chatga yoki ommaviy omborga yozmang!
 
-### 7. Dasturni ishga tushirib tekshirish
-- Terminalda `npm.cmd run dev` buyrug‘ini bering.
-- `http://localhost:3000/register` manziliga o‘tib yangi foydalanuvchi yarating.
-- Firebase Console -> **Authentication** va **Firestore Database** (`users/{uid}`) bo‘limlarida ma’lumotlar paydo bo‘lganini ko‘rishingiz mumkin.
+### 7. Firestore Xavfsizlik Qoidalarini ko‘rib chiqish va joylashtirish (Deploying Security Rules)
+- Loyihamizdagi [`firestore.rules`](firestore.rules) faylini oching va uning qat’iy qoidalarini ko‘rib chiqing.
+- Firebase Console -> **Firestore Database** -> **Rules** yorlig‘iga o‘ting.
+- Tahrirlovchi oynadagi mavjud matn o‘rniga `firestore.rules` fayli tarkibini to‘liq joylashtiring.
+- **"Publish"** (Chop etish) tugmasini bosing.
+- *(Ixtiyoriy muqobil: Agar Firebase CLI o‘rnatilgan bo‘lsa, `firebase deploy --only firestore:rules` buyrug‘i orqali ham yuklashingiz mumkin).*
+
+### 8. Dasturni Windows PowerShell orqali ishga tushirish (Running on Windows PowerShell)
+- Windows PowerShell-da loyihani ishga tushirish uchun quyidagi usullardan birini tanlang:
+  
+  **1-usul (Tavsiya etiladi — har doim ishlaydi):**
+  ```powershell
+  npm.cmd run dev
+  ```
+  *(PowerShell-da `npm.cmd` kengaytmasini ko‘rsatish tizim xavfsizlik cheklovlarini chetlab o‘tadi).*
+
+  **2-usul (Agar PowerShell skriptlarni bloklasa - PSSecurityException):**
+  ```powershell
+  powershell -ExecutionPolicy Bypass -Command "npm.cmd run dev"
+  ```
+  yoki joriy sessiya uchun ruxsat bering:
+  ```powershell
+  Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+  npm run dev
+  ```
+
+- Brauzerda oching: **`http://localhost:3000`**
+- `http://localhost:3000/register` manziliga o‘tib yangi foydalanuvchi akkauntini yarating.
+- Ro‘yxatdan o‘tgach, avtomatik tarzda `/profile` sahifasiga yo‘naltirilasiz. Firebase Authentication hamda Cloud Firestore dagi `users/{uid}` profili to‘liq ishga tushadi.
 
 ---
 
-## 🔒 Xavfsizlik qoidalari (`firestore.rules`)
+## 🔒 Xavfsizlik qoidalari (`firestore.rules`) va App Check
 
-Loyiha qat’iy **Deny-By-Default** tamoyiliga asoslangan:
+Loyiha qat’iy **Deny-By-Default** va **Email Verification** tamoyillariga asoslangan:
 
 - `/users/{userId}` hujjatlariga faqat autentifikatsiyadan o‘tgan va o‘z UID raqamiga mos keluvchi foydalanuvchi murojaat qila oladi (`request.auth.uid == userId`).
+- Hujjat yaratish va tahrirlashda **tasdiqlangan elektron pochta** majburiy talab qilinadi (`request.auth.token.email_verified == true`).
 - Hujjat yaratish va tahrirlashda ruxsat berilgan maydonlar tekshiriladi (`uid`, `email`, `displayName`, `photoURL`, `phoneNumber`, `createdAt`, `updatedAt`).
+- Tahrirlashda faqat tasdiqlangan maydonlarni o‘zgartirishga ruxsat beriladi (`request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName', 'updatedAt', 'photoURL', 'phoneNumber'])`).
 - Boshqaruvchi rollar (`role`, `isAdmin`, `permissions`) mijoz tomonidan kiritilishi taqiqlangan.
 - UID, `email` va `createdAt` vaqtini tahrirlash orqali o‘zgartirib bo‘lmaydi.
 - Foydalanuvchilar ro‘yxatini to‘liq tortib olish (`list`) taqiqlangan.
 - Barcha boshqa to‘plamlar (kelajakdagi tovarlar, narxlar, do‘konlar, kassa) sukut bo‘yicha to‘liq yopiq (`allow read, write: if false;`).
+- **Firebase App Check:** reCAPTCHA v3 integratsiyasi veb mijozda tayyorlandi. Firebase Console-da App Check faollashtirilmaguncha enforcement o‘chiq qoladi.
 
 ---
 

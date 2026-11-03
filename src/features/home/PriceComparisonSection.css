@@ -1,18 +1,14 @@
 .bq-comparison-section {
-  padding-top: 4.5rem;
-  padding-bottom: 4.5rem;
+  padding-top: 5rem;
+  padding-bottom: 5rem;
   background-color: var(--color-white);
   border-bottom: 1px solid var(--color-slate-200);
-}
-
-.text-emerald {
-  color: var(--color-primary-700);
 }
 
 .bq-comparison-grid {
   display: grid;
   grid-template-columns: 1fr 1.35fr;
-  gap: 2.5rem;
+  gap: 3rem;
   align-items: center;
 }
 
@@ -20,18 +16,18 @@
 .bq-comparison-benefits {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.75rem;
 }
 
 .bq-benefit-item {
   display: flex;
   align-items: flex-start;
-  gap: 0.85rem;
+  gap: 1rem;
 }
 
 .bq-benefit-icon {
-  width: 36px;
-  height: 36px;
+  width: 42px;
+  height: 42px;
   border-radius: var(--radius-md);
   background-color: var(--color-primary-50);
   color: var(--color-primary-700);
@@ -44,24 +40,24 @@
 }
 
 .bq-benefit-title {
-  font-size: 1.05rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--color-slate-900);
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.3rem;
 }
 
 .bq-benefit-desc {
-  font-size: 0.875rem;
+  font-size: 0.925rem;
   color: var(--color-slate-600);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 /* Mockup Card */
 .bq-mockup-card {
   border: 1px solid var(--color-slate-200);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   overflow: hidden;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08);
   background-color: var(--color-white);
 }
 
@@ -69,45 +65,50 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1.25rem;
-  background-color: var(--color-slate-50);
-  border-bottom: 1px solid var(--color-slate-200);
+  padding: 0.85rem 1.25rem;
+  background-color: var(--color-primary-50);
+  border-bottom: 1px solid var(--color-primary-200);
   gap: 0.5rem;
   flex-wrap: wrap;
 }
 
 .bq-mockup-badge {
   font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--color-primary-800);
+  font-weight: 800;
+  color: var(--color-primary-900);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
 }
 
 .bq-mockup-tag {
   font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--color-slate-500);
-  background-color: var(--color-slate-200);
+  font-weight: 700;
+  color: var(--color-primary-800);
+  background-color: var(--color-white);
+  border: 1px solid var(--color-primary-200);
   padding: 0.15rem 0.5rem;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-sm);
 }
 
 .bq-mockup-product-bar {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--color-slate-100);
+  gap: 1rem;
+  padding: 1.15rem 1.25rem;
+  border-bottom: 1px solid var(--color-slate-200);
   background-color: var(--color-white);
 }
 
 .bq-mockup-product-thumb {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: var(--radius-md);
   background-color: var(--color-primary-50);
   color: var(--color-primary-700);
+  border: 1px solid var(--color-primary-200);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -115,14 +116,15 @@
 }
 
 .bq-mockup-product-name {
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 800;
   color: var(--color-slate-900);
 }
 
 .bq-mockup-product-meta {
-  font-size: 0.785rem;
+  font-size: 0.825rem;
   color: var(--color-slate-500);
+  margin-top: 0.15rem;
 }
 
 /* Offers Table Rows */
@@ -135,7 +137,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.85rem 1.25rem;
+  padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--color-slate-100);
   gap: 1rem;
   transition: background-color var(--transition-fast);
@@ -143,6 +145,7 @@
 
 .bq-mockup-row--best {
   background-color: #F0FDF4;
+  border-left: 3px solid var(--color-primary-600);
 }
 
 .bq-mockup-seller {
@@ -150,26 +153,18 @@
 }
 
 .bq-mockup-seller-name {
-  font-size: 0.875rem;
+  font-size: 0.925rem;
   font-weight: 700;
   color: var(--color-slate-900);
 }
 
 .bq-mockup-seller-meta {
-  font-size: 0.75rem;
+  font-size: 0.775rem;
   color: var(--color-slate-500);
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-}
-
-.inline-icon {
-  color: var(--color-primary-700);
-}
-
-.text-success {
-  color: #16A34A;
-  font-weight: 700;
+  gap: 0.35rem;
+  margin-top: 0.15rem;
 }
 
 .bq-mockup-pricing {
@@ -177,26 +172,27 @@
 }
 
 .bq-mockup-price {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 800;
   color: var(--color-slate-900);
 }
 
 .bq-mockup-delivery {
-  font-size: 0.725rem;
+  font-size: 0.75rem;
   color: var(--color-slate-500);
+  margin-top: 0.1rem;
 }
 
 .bq-mockup-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.4rem 0.75rem;
-  border-radius: var(--radius-sm);
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-md);
   background-color: var(--color-white);
-  border: 1px solid var(--color-slate-300);
+  border: 1px solid var(--color-slate-200);
   color: var(--color-slate-700);
-  font-size: 0.775rem;
+  font-size: 0.8rem;
   font-weight: 600;
   cursor: default;
   opacity: 0.85;
@@ -205,17 +201,18 @@
 .bq-mockup-disclaimer {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.65rem 1.25rem;
+  gap: 0.45rem;
+  padding: 0.75rem 1.25rem;
   background-color: var(--color-slate-50);
-  font-size: 0.725rem;
+  font-size: 0.75rem;
   color: var(--color-slate-500);
+  line-height: 1.4;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 960px) {
   .bq-comparison-grid {
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: 2.25rem;
   }
 }
 
@@ -223,7 +220,7 @@
   .bq-mockup-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 0.4rem;
+    gap: 0.5rem;
   }
 
   .bq-mockup-pricing {
@@ -234,3 +231,4 @@
     align-self: flex-start;
   }
 }
+

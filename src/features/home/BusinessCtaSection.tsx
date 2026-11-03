@@ -1,10 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Building2, TrendingUp, Store, BarChart3, ArrowRight, Info, X } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import './BusinessCtaSection.css';
 
 export const BusinessCtaSection: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
+
+  // Close modal on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && modalOpen) {
+        setModalOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [modalOpen]);
 
   return (
     <section id="business-section" className="bq-business-cta-section">
@@ -59,17 +71,18 @@ export const BusinessCtaSection: React.FC = () => {
 
             {/* CTA Action */}
             <div className="bq-business-actions">
-              <Button
-                variant="primary"
-                size="lg"
-                onClick={() => setModalOpen(true)}
-                rightIcon={<ArrowRight size={17} />}
-                className="bq-business-btn"
-              >
-                Biznes uchun
-              </Button>
+              <Link to="/merchant">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  rightIcon={<ArrowRight size={17} />}
+                  className="bq-business-btn"
+                >
+                  Do‘kon egasi kabineti
+                </Button>
+              </Link>
               <span className="bq-business-stage-note">
-                Sotuvchilar kabineti 4-bosqichda to‘liq ulanadi
+                Do‘kon ochish arizasi va savdo boshqaruvi
               </span>
             </div>
           </div>

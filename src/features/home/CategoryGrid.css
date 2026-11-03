@@ -1,40 +1,42 @@
 .bq-categories-section {
-  padding-top: 4rem;
-  padding-bottom: 4rem;
+  padding-top: 4.5rem;
+  padding-bottom: 4.5rem;
   background-color: var(--color-slate-50);
   border-bottom: 1px solid var(--color-slate-200);
 }
 
 .bq-category-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.15rem;
 }
 
 .bq-cat-card {
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem 1.15rem;
+  gap: 1.1rem;
+  padding: 1.15rem 1.25rem;
   background-color: var(--color-white);
   border: 1px solid var(--color-slate-200);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
   transition: all var(--transition-fast);
 }
 
 .bq-cat-card:hover {
   border-color: var(--color-primary-400);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-card-hover);
   background-color: var(--color-white);
+  transform: translateY(-2px);
 }
 
 .bq-cat-card__icon-box {
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: var(--radius-md);
   background-color: var(--color-primary-50);
   color: var(--color-primary-800);
-  border: 1px solid var(--color-primary-100);
+  border: 1px solid var(--color-primary-200);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -54,17 +56,17 @@
 }
 
 .bq-cat-card__title {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--color-slate-900);
-  margin-bottom: 0.15rem;
+  margin-bottom: 0.2rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .bq-cat-card__desc {
-  font-size: 0.775rem;
+  font-size: 0.8rem;
   color: var(--color-slate-500);
   line-height: 1.35;
   display: -webkit-box;
@@ -83,80 +85,83 @@
 
 .bq-cat-card:hover .bq-cat-card__action {
   color: var(--color-primary-700);
-  transform: translateX(2px);
+  transform: translateX(3px);
 }
 
 /* Category Modal */
 .bq-cat-modal {
   background-color: var(--color-white);
-  border-radius: var(--radius-lg);
-  padding: 1.75rem;
-  max-width: 420px;
+  border-radius: var(--radius-xl);
+  padding: 2rem;
+  max-width: 440px;
   width: 100%;
   position: relative;
   text-align: center;
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-xl);
   border: 1px solid var(--color-slate-200);
 }
 
 .bq-cat-modal__close {
   position: absolute;
-  top: 1rem;
-  right: 1rem;
+  top: 1.25rem;
+  right: 1.25rem;
   color: var(--color-slate-400);
   cursor: pointer;
-  padding: 0.25rem;
+  padding: 0.35rem;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
 }
 
 .bq-cat-modal__close:hover {
-  color: var(--color-slate-700);
+  color: var(--color-slate-800);
+  background-color: var(--color-slate-100);
 }
 
 .bq-cat-modal__icon {
-  width: 50px;
-  height: 50px;
-  border-radius: var(--radius-md);
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-lg);
   background-color: var(--color-primary-50);
   color: var(--color-primary-700);
-  border: 1px solid var(--color-primary-100);
+  border: 1px solid var(--color-primary-200);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 1rem;
+  margin: 0 auto 1.25rem;
 }
 
 .bq-cat-modal__title {
-  font-size: 1.2rem;
-  font-weight: 700;
+  font-size: 1.3rem;
+  font-weight: 800;
   color: var(--color-slate-900);
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.4rem;
 }
 
 .bq-cat-modal__desc {
-  font-size: 0.875rem;
+  font-size: 0.9rem;
   color: var(--color-slate-600);
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.5rem;
 }
 
 .bq-cat-modal__notice {
   background-color: var(--color-slate-50);
   border: 1px solid var(--color-slate-200);
   border-radius: var(--radius-md);
-  padding: 0.85rem 1rem;
+  padding: 1rem;
   text-align: left;
-  font-size: 0.825rem;
+  font-size: 0.85rem;
   color: var(--color-slate-600);
-  line-height: 1.5;
-  margin-bottom: 1.25rem;
+  line-height: 1.55;
+  margin-bottom: 1.5rem;
 }
 
 .bq-cat-modal__notice-head {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-weight: 600;
+  gap: 0.45rem;
+  font-weight: 700;
   color: var(--color-primary-800);
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.35rem;
 }
 
 .bq-cat-modal__btn {
@@ -168,3 +173,4 @@
     grid-template-columns: 1fr;
   }
 }
+

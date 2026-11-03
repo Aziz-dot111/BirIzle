@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User as UserIcon, AlertCircle, AlertTriangle, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, User as UserIcon, AlertCircle, AlertTriangle, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { validateRegistrationForm } from '@/utils/validation';
 import { Input } from '@/components/common/Input';
@@ -17,6 +17,7 @@ export const RegisterForm: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const clearFieldError = (field: string) => {
     if (errors[field] || errors.general) {
@@ -32,13 +33,17 @@ export const RegisterForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
+    setSuccessMessage(null);
 
-    const validation = validateRegistrationForm({
-      displayName,
-      email,
-      password,
-      confirmPassword,
-    });
+    const validation = validateRegistrationForm(
+      {
+        displayName,
+        email,
+        password,
+        confirmPassword,
+      },
+      { requireDisplayName: true }
+    );
 
     if (!validation.isValid) {
       setErrors(validation.errors);
@@ -62,13 +67,26 @@ export const RegisterForm: React.FC = () => {
       return;
     }
 
-    // Direct to user profile after registration
-    navigate('/profile', { replace: true });
+    setSuccessMessage('Muvaffaqiyatli ro‘yxatdan o‘tdingiz! Tasdiqlash havolasi elektron pochtangizga yuborildi.');
+    setTimeout(() => {
+      navigate('/profile', { replace: true, state: { newlyRegistered: true } });
+    }, 1200);
   };
 
   return (
     <div className="bq-auth-card animate-fade-in">
       <div className="bq-auth-card__header">
+        <Link to="/" className="bq-auth-card__brand" aria-label="Bosh sahifaga qaytish">
+          <div className="bq-auth-card__logo-badge">
+            <svg viewBox="0 0 32 32" fill="none" className="bq-auth-card__logo-svg" aria-hidden="true">
+              <rect width="32" height="32" rx="8" fill="#047857" />
+              <circle cx="14" cy="14" r="6" stroke="#FFFFFF" strokeWidth="2.5" />
+              <path d="M18.5 18.5L24 24" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" />
+              <circle cx="14" cy="14" r="2.5" fill="#34D399" />
+            </svg>
+          </div>
+          <span className="bq-auth-card__brand-title">BirQidir</span>
+        </Link>
         <h2 className="bq-auth-card__title">Ro‘yxatdan o‘tish</h2>
         <p className="bq-auth-card__subtitle">
           BirQidir platformasida yangi akkaunt yarating
@@ -95,9 +113,16 @@ export const RegisterForm: React.FC = () => {
         </div>
       )}
 
+      {successMessage && (
+        <div className="bq-auth-success-alert" role="status">
+          <CheckCircle2 size={18} />
+          <span>{successMessage}</span>
+        </div>
+      )}
+
       <form className="bq-auth-form" onSubmit={handleSubmit} noValidate>
         <Input
-          label="Ism va familiya (ixtiyoriy)"
+          label="To‘liq ism va familiya"
           type="text"
           placeholder="Masalan: Azizbek Karimov"
           value={displayName}
@@ -107,6 +132,7 @@ export const RegisterForm: React.FC = () => {
           }}
           error={errors.displayName}
           leftIcon={<UserIcon size={18} />}
+          required
           autoComplete="name"
         />
 
@@ -167,6 +193,7 @@ export const RegisterForm: React.FC = () => {
           variant="primary"
           size="lg"
           isLoading={isSubmitting}
+          disabled={Boolean(successMessage) || isSubmitting}
           rightIcon={<ArrowRight size={18} />}
           className="bq-auth-submit-btn"
         >

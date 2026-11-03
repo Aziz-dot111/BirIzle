@@ -4,6 +4,7 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged,
   updateProfile as firebaseUpdateProfile,
+  sendEmailVerification,
   type User,
   type Unsubscribe,
 } from 'firebase/auth';
@@ -13,6 +14,7 @@ import type { ServiceResult } from '@/types';
 
 /**
  * Register a new user using Firebase Authentication
+ * Automatically dispatches an email verification link
  */
 export async function registerWithEmail(
   email: string,
@@ -33,7 +35,67 @@ export async function registerWithEmail(
         displayName: displayName.trim(),
       });
     }
+
+    // Automatically send email verification link upon registration
+    try {
+      await sendEmailVerification(cred.user);
+    } catch (verErr) {
+      console.warn('[BirQidir Auth] Could not send initial verification email:', verErr);
+    }
+
     return { data: cred.user, error: null };
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code || '';
+    return { data: null, error: getFirebaseErrorMessage(code) };
+  }
+}
+
+/**
+ * Resend verification email to the user
+ */
+export async function resendVerificationEmail(targetUser?: User | null): Promise<ServiceResult<void>> {
+  const u = targetUser || firebaseAuth?.currentUser;
+  if (!u) {
+    return { data: null, error: 'Foydalanuvchi tizimga kirmagan.' };
+  }
+
+  if (u.emailVerified) {
+    return { data: undefined, error: null };
+  }
+
+  try {
+    await sendEmailVerification(u);
+    return { data: undefined, error: null };
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code || '';
+    return { data: null, error: getFirebaseErrorMessage(code) };
+  }
+}
+
+/**
+ * Reloads the current user from Firebase servers and force-refreshes the ID token.
+ * This guarantees updated custom claims (like `email_verified: true`) are reflected
+ * for Cloud Firestore Security Rules immediately.
+ */
+export async function reloadCurrentUserAndToken(): Promise<
+  ServiceResult<{ user: User; isEmailVerified: boolean }>
+> {
+  if (!isFirebaseReady || !firebaseAuth || !firebaseAuth.currentUser) {
+    return { data: null, error: 'Foydalanuvchi tizimga kirmagan.' };
+  }
+
+  try {
+    await firebaseAuth.currentUser.reload();
+    // Force refresh ID token so claims (email_verified) update in Firestore requests
+    await firebaseAuth.currentUser.getIdToken(true);
+    const refreshed = firebaseAuth.currentUser;
+    return {
+      data: {
+        user: refreshed,
+        isEmailVerified: Boolean(refreshed.emailVerified),
+      },
+      error: null,
+    };
   } catch (err: unknown) {
     const code = (err as { code?: string })?.code || '';
     return { data: null, error: getFirebaseErrorMessage(code) };
