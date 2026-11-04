@@ -19,6 +19,7 @@ import { firestoreDb, firebaseAuth, isFirebaseReady } from './firebase';
 import { getFirebaseErrorMessage } from './errors';
 import type {
   Store,
+  StoreOwnershipStatus,
   CreateStoreInput,
   UpdateStoreInput,
   ProductItem,
@@ -102,7 +103,8 @@ export function mapDocumentToStore(id: string, data: DocumentData): Store {
   const coords = normalizeStoreCoordinates(data as Record<string, unknown>);
   return {
     id,
-    ownerId: data.ownerId || undefined,
+    ownerId: data.ownerId !== undefined ? data.ownerId : undefined,
+    ownershipStatus: (data.ownershipStatus as StoreOwnershipStatus) || (data.ownerId ? 'claimed' : 'unclaimed'),
     name: data.name || '',
     city: data.city || 'Nukus',
     district: data.district || undefined,
@@ -1029,8 +1031,8 @@ export async function createStore(input: CreateStoreInput): Promise<ServiceResul
       address: input.address.trim(),
       coordinates: input.coordinates,
       category: input.category.trim(),
-      phone: input.phone.trim(),
-      openingHours: input.openingHours.trim(),
+      phone: (input.phone || '').trim(),
+      openingHours: (input.openingHours || '').trim(),
       description: input.description?.trim() || null,
       website: input.website?.trim() || null,
       placeType: input.placeType || 'store',
@@ -1053,8 +1055,8 @@ export async function createStore(input: CreateStoreInput): Promise<ServiceResul
       address: input.address.trim(),
       coordinates: input.coordinates,
       category: input.category.trim(),
-      phone: input.phone.trim(),
-      openingHours: input.openingHours.trim(),
+      phone: (input.phone || '').trim(),
+      openingHours: (input.openingHours || '').trim(),
       description: input.description?.trim() || undefined,
       website: input.website?.trim() || undefined,
       placeType: input.placeType || 'store',
@@ -1143,6 +1145,7 @@ export async function updateStore(
     if (input.description !== undefined) updatePayload.description = input.description?.trim() || null;
     if (input.website !== undefined) updatePayload.website = input.website?.trim() || null;
     if (input.status !== undefined) updatePayload.status = input.status;
+    if (input.ownershipStatus !== undefined) updatePayload.ownershipStatus = input.ownershipStatus;
 
     await updateDoc(storeDocRef, updatePayload);
     storeCache.delete(cleanId);
@@ -1152,6 +1155,113 @@ export async function updateStore(
     const code = (err as { code?: string })?.code || '';
     return { data: null, error: getFirebaseErrorMessage(code) };
   }
+}
+
+/**
+ * Creates a new Store directly as an Administrator.
+ * 
+ * BUSINESS INVARIANTS:
+ * 1. Requires caller to have authenticated session with { admin: true } custom claim.
+ * 2. Newly created stores are initial unclaimed stores:
+ *    - ownerId: null
+ *    - ownershipStatus: 'unclaimed'
+ *    - isVerified: true (admin authorized)
+ *    - status: 'active'
+ * 3. Validates geographic coordinates and optional phone/openingHours.
+ */
+export async function createAdminStore(input: CreateStoreInput): Promise<ServiceResult<Store>> {
+  if (!isFirebaseReady || !firestoreDb) {
+    return { data: null, error: 'Firebase Firestore tizimi hali sozlanmagan.' };
+  }
+
+  const currentUser = firebaseAuth?.currentUser;
+  if (!currentUser) {
+    return { data: null, error: 'Do‘kon yaratish uchun avval tizimga kirishingiz shart.' };
+  }
+
+  const tokenResult = await currentUser.getIdTokenResult().catch(() => null);
+  const isAdmin = Boolean(tokenResult?.claims?.admin);
+  if (!isAdmin) {
+    return { data: null, error: 'Do‘kon yaratish uchun faqat administrator ruxsatiga ega bo‘lishingiz lozim.' };
+  }
+
+  const validation = validateStoreInput(input, { allowOptionalContact: true });
+  if (!validation.isValid) {
+    return { data: null, error: validation.error || 'Do‘kon ma’lumotlari noto‘g‘ri kiritildi.' };
+  }
+
+  try {
+    const colRef = collection(firestoreDb, STORES_COLLECTION);
+    const newDocRef = doc(colRef);
+    const nowIso = new Date().toISOString();
+
+    const storePayload: Record<string, unknown> = {
+      name: input.name.trim(),
+      city: input.city.trim(),
+      district: input.district?.trim() || null,
+      address: input.address.trim(),
+      coordinates: input.coordinates,
+      category: input.category.trim(),
+      phone: input.phone ? input.phone.trim() : '',
+      openingHours: input.openingHours ? input.openingHours.trim() : '',
+      description: input.description?.trim() || null,
+      website: input.website?.trim() || null,
+      placeType: input.placeType || 'store',
+      ownerId: null,
+      ownershipStatus: 'unclaimed',
+      isVerified: true,
+      status: 'active',
+      sourceType: 'birqidir',
+      isDemo: false,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    await setDoc(newDocRef, storePayload);
+
+    const createdStore: Store = {
+      id: newDocRef.id,
+      name: input.name.trim(),
+      city: input.city.trim(),
+      district: input.district?.trim() || undefined,
+      address: input.address.trim(),
+      coordinates: input.coordinates,
+      category: input.category.trim(),
+      phone: input.phone ? input.phone.trim() : '',
+      openingHours: input.openingHours ? input.openingHours.trim() : '',
+      description: input.description?.trim() || undefined,
+      website: input.website?.trim() || undefined,
+      placeType: input.placeType || 'store',
+      ownerId: null,
+      ownershipStatus: 'unclaimed',
+      isVerified: true,
+      status: 'active',
+      sourceType: 'birqidir',
+      isDemo: false,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+
+    storeCache.set(createdStore.id, { store: createdStore, timestamp: Date.now() });
+    return { data: createdStore, error: null };
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code || '';
+    return { data: null, error: getFirebaseErrorMessage(code) };
+  }
+}
+
+/**
+ * Deactivates an existing store (sets status to 'archived').
+ */
+export async function deactivateStore(storeId: string): Promise<ServiceResult<Store>> {
+  return updateStore(storeId, { status: 'archived' });
+}
+
+/**
+ * Reactivates an existing store (sets status to 'active').
+ */
+export async function reactivateStore(storeId: string): Promise<ServiceResult<Store>> {
+  return updateStore(storeId, { status: 'active' });
 }
 
 /**

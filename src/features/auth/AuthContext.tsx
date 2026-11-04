@@ -9,6 +9,7 @@ import {
   updateAuthDisplayName,
   resendVerificationEmail,
   reloadCurrentUserAndToken,
+  checkUserIsAdmin,
 } from '@/services/firebase/auth';
 import {
   getUserProfile,
@@ -24,6 +25,7 @@ export interface AuthContextType {
   loading: boolean;
   isAuthenticated: boolean;
   isEmailVerified: boolean;
+  isAdmin: boolean;
   isConfigured: boolean;
   configStatus: FirebaseConfigStatus;
   login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
@@ -45,12 +47,23 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
   const isRegisteringRef = useRef(false);
 
   const configStatus = useMemo(() => getFirebaseConfigStatus(), []);
   const isAuthenticated = Boolean(user);
   const isEmailVerified = Boolean(user?.emailVerified);
+
+  // Safely check and sync custom claim { admin: true }
+  const syncAdminClaim = useCallback(async (currentUser: User | null) => {
+    if (!currentUser) {
+      setIsAdmin(false);
+      return;
+    }
+    const adminStatus = await checkUserIsAdmin(currentUser);
+    setIsAdmin(adminStatus);
+  }, []);
 
   // Safely fetch or self-heal Firestore user profile
   const syncProfile = useCallback(async (currentUser: User) => {
@@ -84,17 +97,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const unsubscribe = subscribeToAuthState(async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
+        await syncAdminClaim(currentUser);
         if (!isRegisteringRef.current) {
           await syncProfile(currentUser);
         }
       } else {
+        setIsAdmin(false);
         setProfile(null);
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [syncProfile]);
+  }, [syncProfile, syncAdminClaim]);
 
   const login = async (email: string, pass: string) => {
     setLoading(true);
@@ -106,6 +121,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (result.data) {
       setUser(result.data);
+      await syncAdminClaim(result.data);
       if (result.data.emailVerified) {
         await syncProfile(result.data);
       } else {
@@ -158,6 +174,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await logOutUser();
     setUser(null);
     setProfile(null);
+    setIsAdmin(false);
     setLoading(false);
   };
 
@@ -184,6 +201,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (res.data) {
       const refreshedUser = res.data.user;
       setUser(refreshedUser);
+      await syncAdminClaim(refreshedUser);
 
       // Once verified, ensure the Firestore profile exists
       if (res.data.isEmailVerified) {
@@ -252,6 +270,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     isAuthenticated,
     isEmailVerified,
+    isAdmin,
     isConfigured: isFirebaseReady,
     configStatus,
     login,

@@ -5,13 +5,16 @@ import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { ProfilePage } from '@/pages/ProfilePage';
 import { SearchPage } from '@/pages/SearchPage';
+import { MapPage } from '@/pages/MapPage';
 import { FavoritesPage } from '@/pages/FavoritesPage';
 import { ProductDetailPage } from '@/pages/ProductDetailPage';
 import { MerchantDashboardPage } from '@/pages/MerchantDashboardPage';
 import { MerchantApplyPage } from '@/pages/MerchantApplyPage';
+import { AdminStoresPage } from '@/pages/AdminStoresPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { ProtectedRoute } from '@/features/auth/ProtectedRoute';
 import { PublicOnlyRoute } from '@/features/auth/PublicOnlyRoute';
+import { AdminRoute } from '@/features/auth/AdminRoute';
 
 export const router = createBrowserRouter([
   {
@@ -43,6 +46,10 @@ export const router = createBrowserRouter([
         element: <SearchPage />,
       },
       {
+        path: 'map',
+        element: <MapPage />,
+      },
+      {
         path: 'favorites',
         element: <FavoritesPage />,
       },
@@ -72,6 +79,22 @@ export const router = createBrowserRouter([
           <ProtectedRoute>
             <MerchantApplyPage />
           </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'admin',
+        element: (
+          <AdminRoute>
+            <AdminStoresPage />
+          </AdminRoute>
+        ),
+      },
+      {
+        path: 'admin/stores',
+        element: (
+          <AdminRoute>
+            <AdminStoresPage />
+          </AdminRoute>
         ),
       },
       {

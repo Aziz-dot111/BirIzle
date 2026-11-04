@@ -8,6 +8,10 @@ import {
   validateUpdateOfferInput,
   normalizeSearchTerm,
   generateSearchKeywords,
+  validateStoreApplicationInput,
+  validateProductSubmissionInput,
+  validateOfferSubmissionInput,
+  validateReviewSubmissionInput,
 } from './catalogValidation';
 
 describe('Catalog Validation Utilities', () => {
@@ -195,6 +199,103 @@ describe('Catalog Validation Utilities', () => {
 
     it('rejects short name in update', () => {
       expect(validateUpdateStoreInput({ name: 'A' }).isValid).toBe(false);
+    });
+  });
+
+  describe('validateStoreApplicationInput', () => {
+    const validApplication = {
+      name: 'Nukus Savdo Markazi',
+      city: 'Nukus',
+      district: 'Nukus shahri',
+      address: 'Dosnazarov ko‘chasi, 12',
+      coordinates: { lat: 42.4619, lng: 59.6166 },
+      category: 'electronics',
+      phone: '+998612221111',
+      openingHours: '09:00 - 20:00',
+    };
+
+    it('accepts valid store application input', () => {
+      expect(validateStoreApplicationInput(validApplication).isValid).toBe(true);
+    });
+
+    it('rejects store application with missing or short name', () => {
+      expect(validateStoreApplicationInput({ ...validApplication, name: '' }).isValid).toBe(false);
+      expect(validateStoreApplicationInput({ ...validApplication, name: 'A' }).isValid).toBe(false);
+    });
+
+    it('rejects store application with invalid coordinates', () => {
+      expect(validateStoreApplicationInput({ ...validApplication, coordinates: { lat: 95, lng: 59 } }).isValid).toBe(false);
+    });
+  });
+
+  describe('validateProductSubmissionInput', () => {
+    const validProductSub = {
+      storeId: 'store_123',
+      name: 'Inverter Konditsioner 12',
+      category: 'appliances',
+      brand: 'Artel',
+      proposedPrice: 4500000,
+    };
+
+    it('accepts valid product submission', () => {
+      expect(validateProductSubmissionInput(validProductSub).isValid).toBe(true);
+    });
+
+    it('rejects product submission without storeId', () => {
+      expect(validateProductSubmissionInput({ ...validProductSub, storeId: '' }).isValid).toBe(false);
+    });
+
+    it('rejects product submission with negative proposed price', () => {
+      expect(validateProductSubmissionInput({ ...validProductSub, proposedPrice: -100 }).isValid).toBe(false);
+    });
+
+    it('rejects product submission with invalid image URL', () => {
+      expect(validateProductSubmissionInput({ ...validProductSub, imageUrl: 'invalid_url' }).isValid).toBe(false);
+    });
+  });
+
+  describe('validateOfferSubmissionInput', () => {
+    const validOfferSub = {
+      storeId: 'store_123',
+      productId: 'prod_456',
+      price: 3200000,
+      currency: 'UZS' as const,
+      availability: 'in_stock' as const,
+      warrantyMonths: 12,
+      deliveryAvailable: true,
+    };
+
+    it('accepts valid offer submission', () => {
+      expect(validateOfferSubmissionInput(validOfferSub).isValid).toBe(true);
+    });
+
+    it('rejects offer submission with negative price', () => {
+      expect(validateOfferSubmissionInput({ ...validOfferSub, price: -5000 }).isValid).toBe(false);
+    });
+
+    it('rejects offer submission with invalid currency or availability', () => {
+      // @ts-expect-error Testing invalid currency
+      expect(validateOfferSubmissionInput({ ...validOfferSub, currency: 'EUR' }).isValid).toBe(false);
+      // @ts-expect-error Testing invalid availability
+      expect(validateOfferSubmissionInput({ ...validOfferSub, availability: 'unknown' }).isValid).toBe(false);
+    });
+  });
+
+  describe('validateReviewSubmissionInput', () => {
+    it('accepts approved and rejected moderation statuses', () => {
+      expect(validateReviewSubmissionInput({ status: 'approved' }).isValid).toBe(true);
+      expect(validateReviewSubmissionInput({ status: 'rejected', adminNotes: 'Hujjatlar yetarli emas' }).isValid).toBe(true);
+    });
+
+    it('rejects invalid or pending moderation status for final decision', () => {
+      expect(validateReviewSubmissionInput({ status: 'pending' }).isValid).toBe(false);
+      expect(validateReviewSubmissionInput({ status: 'unknown' }).isValid).toBe(false);
+      expect(validateReviewSubmissionInput(null).isValid).toBe(false);
+    });
+
+    it('rejects excessively long admin notes (> 500 characters)', () => {
+      const longNote = 'A'.repeat(501);
+      expect(validateReviewSubmissionInput({ status: 'rejected', adminNotes: longNote }).isValid).toBe(false);
     });
   });
 });

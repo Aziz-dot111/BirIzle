@@ -319,6 +319,14 @@ export const SearchPage: React.FC = () => {
             </div>
 
             <div className="bq-search-page__filters-bar">
+              <Link
+                to={`/map?q=${encodeURIComponent(query)}&category=${encodeURIComponent(category)}`}
+                className="bq-search-filter-badge bq-search-filter-badge--map-action"
+                title="Qidiruv natijalarini interaktiv xaritada ko‘rish"
+              >
+                <MapPin size={13} className="text-emerald" />
+                <span>Xaritada do‘konlarni ko‘rish</span>
+              </Link>
               <span className="bq-search-filter-badge">
                 <MapPin size={13} className="text-emerald" /> Hudud: {region}
               </span>

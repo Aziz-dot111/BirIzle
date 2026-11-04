@@ -13,6 +13,8 @@ import {
   Scale,
   Home,
   Heart,
+  MapPin,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -20,7 +22,7 @@ import { Button } from '@/components/common/Button';
 import './Header.css';
 
 export const Header: React.FC = () => {
-  const { user, profile, logout } = useAuth();
+  const { user, profile, isAdmin, logout } = useAuth();
   const { totalFavorites } = useFavorites();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
@@ -163,14 +165,13 @@ export const Header: React.FC = () => {
               <span>Narxlar</span>
             </button>
 
-            <button
-              type="button"
-              className="bq-header__link"
-              onClick={() => scrollToSection('stores-section')}
+            <NavLink
+              to="/map"
+              className={({ isActive }) => `bq-header__link ${isActive ? 'bq-header__link--active' : ''}`}
             >
-              <Store size={16} aria-hidden="true" />
-              <span>Yaqin do‘konlar</span>
-            </button>
+              <MapPin size={16} aria-hidden="true" />
+              <span>Xarita</span>
+            </NavLink>
 
             <button
               type="button"
@@ -192,6 +193,17 @@ export const Header: React.FC = () => {
             </Link>
             {user ? (
               <div className="bq-header__user-menu">
+                {isAdmin && (
+                  <Link
+                    to="/admin/stores"
+                    className="bq-header__merchant-btn"
+                    style={{ borderColor: '#FDE68A', backgroundColor: '#FEF3C7', color: '#B45309' }}
+                    title="Admin Boshqaruvi"
+                  >
+                    <ShieldCheck size={14} />
+                    <span>Admin</span>
+                  </Link>
+                )}
                 <Link to="/merchant" className="bq-header__merchant-btn" title="Do‘kon egasi kabineti">
                   <Store size={14} />
                   <span>Do‘konim</span>
@@ -319,19 +331,19 @@ export const Header: React.FC = () => {
                   </div>
                 </button>
 
-                <button
-                  type="button"
+                <Link
+                  to="/map"
                   className="bq-header__mobile-link"
-                  onClick={() => scrollToSection('stores-section')}
+                  onClick={closeMenu}
                 >
                   <div className="bq-header__mobile-link-icon">
-                    <Store size={18} />
+                    <MapPin size={18} />
                   </div>
                   <div className="bq-header__mobile-link-text">
-                    <span className="bq-header__mobile-link-title">Yaqin do‘konlar</span>
-                    <span className="bq-header__mobile-link-sub">Mahalliy savdo nuqtalari</span>
+                    <span className="bq-header__mobile-link-title">Do‘konlar xaritasi</span>
+                    <span className="bq-header__mobile-link-sub">Interaktiv xarita va narxlar</span>
                   </div>
-                </button>
+                </Link>
 
                 <Link
                   to="/favorites"
@@ -380,6 +392,17 @@ export const Header: React.FC = () => {
                       <Store size={15} />
                       <span>Do‘kon egasi kabineti</span>
                     </Link>
+                    {isAdmin && (
+                      <Link
+                        to="/admin/stores"
+                        className="bq-header__mobile-merchant-link"
+                        style={{ borderColor: '#FDE68A', backgroundColor: '#FEF3C7', color: '#B45309' }}
+                        onClick={closeMenu}
+                      >
+                        <ShieldCheck size={15} />
+                        <span>Admin paneli</span>
+                      </Link>
+                    )}
                     <Button variant="outline" size="sm" onClick={handleLogout} className="bq-header__mobile-btn">
                       Chiqish
                     </Button>
@@ -404,39 +427,39 @@ export const Header: React.FC = () => {
         )}
       </header>
 
-      {/* Modern Compact Mobile Bottom Navigation Bar */}
+      {/* Modern Compact Mobile Bottom Navigation Bar: Customer 5-section architecture */}
       <nav className="bq-bottom-bar" aria-label="Mobil tezkor navigatsiya">
         <Link to="/" className={`bq-bottom-bar__item ${location.pathname === '/' ? 'bq-bottom-bar__item--active' : ''}`}>
           <Home size={19} />
           <span>Bosh sahifa</span>
         </Link>
-        <button
-          type="button"
-          className="bq-bottom-bar__item"
-          onClick={() => scrollToSection('categories-section')}
+        <Link
+          to="/search"
+          className={`bq-bottom-bar__item ${location.pathname.startsWith('/search') ? 'bq-bottom-bar__item--active' : ''}`}
         >
-          <ShoppingBag size={19} />
-          <span>Katalog</span>
-        </button>
-        <button
-          type="button"
-          className="bq-bottom-bar__item bq-bottom-bar__item--center"
-          onClick={scrollToSearch}
-          aria-label="Tezkor qidiruv"
+          <Search size={19} />
+          <span>Qidiruv</span>
+        </Link>
+        <Link
+          to="/map"
+          className={`bq-bottom-bar__item bq-bottom-bar__item--center ${location.pathname === '/map' ? 'bq-bottom-bar__item--active' : ''}`}
+          aria-label="Do‘konlar xaritasi"
         >
           <div className="bq-bottom-bar__search-fab">
-            <Search size={20} />
+            <MapPin size={20} />
           </div>
-          <span>Qidirish</span>
-        </button>
-        <button
-          type="button"
-          className="bq-bottom-bar__item"
-          onClick={() => scrollToSection('services-section')}
+          <span>Xarita</span>
+        </Link>
+        <Link
+          to="/favorites"
+          className={`bq-bottom-bar__item ${location.pathname === '/favorites' ? 'bq-bottom-bar__item--active' : ''}`}
         >
-          <Wrench size={19} />
-          <span>Xizmatlar</span>
-        </button>
+          <Heart size={19} />
+          <span>Saqlangan</span>
+          {totalFavorites > 0 && (
+            <span className="bq-bottom-bar__badge">{totalFavorites}</span>
+          )}
+        </Link>
         <Link
           to={user ? '/profile' : '/login'}
           className={`bq-bottom-bar__item ${location.pathname === '/profile' || location.pathname === '/login' ? 'bq-bottom-bar__item--active' : ''}`}

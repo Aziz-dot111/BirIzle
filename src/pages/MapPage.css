@@ -1,0 +1,159 @@
+/* BirQidir — Dedicated Map Page Styles */
+
+.bq-map-page {
+  padding-top: 1.5rem;
+  padding-bottom: 4rem;
+  background-color: var(--color-slate-50);
+  min-height: calc(100vh - 120px);
+}
+
+/* Breadcrumbs */
+.bq-map-page__breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.85rem;
+  color: var(--color-slate-500);
+}
+
+.bq-breadcrumb-link {
+  color: var(--color-slate-600);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.bq-breadcrumb-link:hover {
+  color: var(--color-primary-700);
+}
+
+.bq-breadcrumb-separator {
+  color: var(--color-slate-400);
+}
+
+.bq-breadcrumb-current {
+  color: var(--color-slate-900);
+  font-weight: 600;
+}
+
+/* Hero Section Banner */
+.bq-map-page__hero {
+  background: linear-gradient(135deg, #ffffff 0%, var(--color-primary-50) 100%);
+  border: 1px solid var(--color-primary-100);
+  border-radius: var(--radius-2xl);
+  padding: 1.75rem 2rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 16px rgba(4, 120, 87, 0.05);
+}
+
+.bq-map-page__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background-color: var(--color-primary-100);
+  color: var(--color-primary-800);
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--radius-full);
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+}
+
+.bq-map-page__title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--color-slate-900);
+  letter-spacing: -0.02em;
+  margin-bottom: 0.5rem;
+  line-height: 1.25;
+}
+
+.bq-map-page__desc {
+  font-size: 0.95rem;
+  color: var(--color-slate-600);
+  max-width: 800px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Query Sync Notice */
+.bq-map-page__query-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding: 0.75rem 1.25rem;
+  background-color: #ffffff;
+  border: 1px solid var(--color-primary-200);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+.bq-map-page__query-notice-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.92rem;
+  color: var(--color-slate-800);
+}
+
+.bq-map-page__back-search-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-primary-700);
+  text-decoration: none;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary-50);
+  transition: all var(--transition-fast);
+}
+
+.bq-map-page__back-search-link:hover {
+  background-color: var(--color-primary-100);
+  color: var(--color-primary-800);
+}
+
+/* Full-page Section Wrapper */
+.bq-map-page__section-wrap .bq-stores-section {
+  padding-top: 0;
+}
+
+.bq-stores-section--fullpage {
+  padding-top: 0 !important;
+}
+
+.bq-stores-section--fullpage .bq-section-header {
+  display: none; /* Already covered by MapPage hero banner */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .bq-map-page {
+    padding-top: 1rem;
+    padding-bottom: 5rem; /* Space for mobile bottom bar */
+  }
+
+  .bq-map-page__hero {
+    padding: 1.25rem 1.25rem;
+    border-radius: var(--radius-xl);
+  }
+
+  .bq-map-page__title {
+    font-size: 1.35rem;
+  }
+
+  .bq-map-page__desc {
+    font-size: 0.88rem;
+  }
+
+  .bq-map-page__query-notice {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+

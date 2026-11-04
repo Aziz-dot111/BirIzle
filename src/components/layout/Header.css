@@ -546,6 +546,20 @@
   color: var(--color-primary-700);
 }
 
+.bq-bottom-bar__badge {
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 18px);
+  background-color: var(--color-primary-600);
+  color: #ffffff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: var(--radius-full);
+  min-width: 14px;
+  text-align: center;
+}
+
 .bq-bottom-bar__item--center {
   position: relative;
   top: -0.65rem;

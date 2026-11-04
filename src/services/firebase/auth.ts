@@ -185,3 +185,18 @@ export function getCurrentAuthUser(): User | null {
   if (!isFirebaseReady || !firebaseAuth) return null;
   return firebaseAuth.currentUser;
 }
+
+/**
+ * Checks if the user holds the Firebase Custom Claim { admin: true }
+ * This claim is provisioned securely on the server/CLI using the Firebase Admin SDK.
+ */
+export async function checkUserIsAdmin(targetUser?: User | null): Promise<boolean> {
+  const u = targetUser || firebaseAuth?.currentUser;
+  if (!u) return false;
+  try {
+    const tokenResult = await u.getIdTokenResult();
+    return Boolean(tokenResult.claims?.admin);
+  } catch {
+    return false;
+  }
+}

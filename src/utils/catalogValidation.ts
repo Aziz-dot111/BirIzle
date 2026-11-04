@@ -5,6 +5,9 @@ import type {
   CreateProductInput,
   CreateOfferInput,
   UpdateOfferInput,
+  CreateStoreApplicationInput,
+  CreateProductSubmissionInput,
+  CreateOfferSubmissionInput,
 } from '@/types';
 import type { ValidationResult } from './validation';
 
@@ -85,7 +88,10 @@ export function validateCoordinates(coords?: Coordinates | null): ValidationResu
 /**
  * Validates input for creating a Store in Nukus marketplace
  */
-export function validateStoreInput(input?: Partial<CreateStoreInput> | null): ValidationResult {
+export function validateStoreInput(
+  input?: Partial<CreateStoreInput> | null,
+  options?: { allowOptionalContact?: boolean }
+): ValidationResult {
   if (!input || typeof input !== 'object') {
     return { isValid: false, error: 'Do‘kon ma’lumotlari kiritilmadi.' };
   }
@@ -114,16 +120,21 @@ export function validateStoreInput(input?: Partial<CreateStoreInput> | null): Va
   }
 
   const phone = input.phone?.trim();
-  if (!phone) {
+  if (phone) {
+    const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
+    if (!phoneRegex.test(phone)) {
+      return { isValid: false, error: 'Telefon raqami formati noto‘g‘ri (masalan: +998901234567).' };
+    }
+  } else if (!options?.allowOptionalContact) {
     return { isValid: false, error: 'Do‘kon telefon raqami kiritilishi shart.' };
-  }
-  const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
-  if (!phoneRegex.test(phone)) {
-    return { isValid: false, error: 'Telefon raqami formati noto‘g‘ri (masalan: +998901234567).' };
   }
 
   const openingHours = input.openingHours?.trim();
-  if (!openingHours || openingHours.length < 3) {
+  if (openingHours) {
+    if (openingHours.length < 3) {
+      return { isValid: false, error: 'Ish tartibi va soatlari kamida 3 ta belgidan iborat bo‘lishi kerak.' };
+    }
+  } else if (!options?.allowOptionalContact) {
     return { isValid: false, error: 'Ish tartibi va soatlari kiritilishi shart (masalan: 09:00 - 20:00).' };
   }
 
@@ -263,11 +274,11 @@ export function validateUpdateOfferInput(input?: Partial<UpdateOfferInput> | nul
 }
 
 /**
- * Validates partial input when updating an existing Store document
+ * Validates partial input when updating a store document
  */
 export function validateUpdateStoreInput(input?: Partial<UpdateStoreInput> | null): ValidationResult {
   if (!input || typeof input !== 'object') {
-    return { isValid: false, error: 'Do‘kon ma’lumotlari kiritilmadi.' };
+    return { isValid: false, error: 'Yangilash ma’lumotlari kiritilmadi.' };
   }
 
   if (input.name !== undefined) {
@@ -288,7 +299,7 @@ export function validateUpdateStoreInput(input?: Partial<UpdateStoreInput> | nul
     return { isValid: false, error: 'Do‘kon manzili kamida 3 ta belgidan iborat bo‘lishi kerak.' };
   }
 
-  if (input.phone !== undefined) {
+  if (input.phone !== undefined && input.phone.trim().length > 0) {
     const phone = input.phone.trim();
     const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
     if (!phoneRegex.test(phone)) {
@@ -296,7 +307,7 @@ export function validateUpdateStoreInput(input?: Partial<UpdateStoreInput> | nul
     }
   }
 
-  if (input.openingHours !== undefined && input.openingHours.trim().length < 3) {
+  if (input.openingHours !== undefined && input.openingHours.trim().length > 0 && input.openingHours.trim().length < 3) {
     return { isValid: false, error: 'Ish tartibi va soatlari kiritilishi shart (masalan: 09:00 - 20:00).' };
   }
 
@@ -304,6 +315,86 @@ export function validateUpdateStoreInput(input?: Partial<UpdateStoreInput> | nul
     const coordsCheck = validateCoordinates(input.coordinates);
     if (!coordsCheck.isValid) {
       return coordsCheck;
+    }
+  }
+
+  return { isValid: true };
+}
+
+/**
+ * Validates input for creating a StoreApplication
+ * Delegates to existing validateStoreInput for consistent store schema validation.
+ */
+export function validateStoreApplicationInput(
+  input?: Partial<CreateStoreApplicationInput> | null
+): ValidationResult {
+  return validateStoreInput(input);
+}
+
+/**
+ * Validates input for a ProductSubmission
+ */
+export function validateProductSubmissionInput(
+  input?: Partial<CreateProductSubmissionInput> | null
+): ValidationResult {
+  if (!input || typeof input !== 'object') {
+    return { isValid: false, error: 'Mahsulot arizasi ma’lumotlari kiritilmadi.' };
+  }
+
+  const storeId = input.storeId?.trim();
+  if (!storeId || storeId.length < 2) {
+    return { isValid: false, error: 'Do‘kon identifikatori (storeId) ko‘rsatilmadi.' };
+  }
+
+  // Validate core product fields
+  const productValidation = validateProductInput(input);
+  if (!productValidation.isValid) {
+    return productValidation;
+  }
+
+  // Validate optional proposedPrice
+  if (input.proposedPrice !== undefined && input.proposedPrice !== null) {
+    if (typeof input.proposedPrice !== 'number' || !Number.isFinite(input.proposedPrice)) {
+      return { isValid: false, error: 'Taklif etilgan narx to‘g‘ri raqam bo‘lishi shart.' };
+    }
+    if (input.proposedPrice < 0) {
+      return { isValid: false, error: 'Taklif etilgan narx manfiy bo‘lishi mumkin emas.' };
+    }
+  }
+
+  return { isValid: true };
+}
+
+/**
+ * Validates input for an OfferSubmission
+ * Delegates to validateOfferInput to ensure consistent constraints across pricing, warranty, and currency.
+ */
+export function validateOfferSubmissionInput(
+  input?: Partial<CreateOfferSubmissionInput> | null
+): ValidationResult {
+  return validateOfferInput(input);
+}
+
+/**
+ * Validates an admin review moderation decision on any submission
+ */
+export function validateReviewSubmissionInput(
+  input?: { status?: unknown; adminNotes?: unknown } | null
+): ValidationResult {
+  if (!input || typeof input !== 'object') {
+    return { isValid: false, error: 'Moderatsiya qarori kiritilmadi.' };
+  }
+
+  if (input.status !== 'approved' && input.status !== 'rejected') {
+    return { isValid: false, error: 'Moderatsiya statusi faqat "approved" yoki "rejected" bo‘lishi kerak.' };
+  }
+
+  if (input.adminNotes !== undefined && input.adminNotes !== null) {
+    if (typeof input.adminNotes !== 'string') {
+      return { isValid: false, error: 'Admin izohi matn bo‘lishi kerak.' };
+    }
+    if (input.adminNotes.length > 500) {
+      return { isValid: false, error: 'Admin izohi 500 ta belgidan oshmasligi kerak.' };
     }
   }
 

@@ -12,6 +12,8 @@ export interface Coordinates {
 export type PlaceSourceType = 'birqidir' | 'openstreetmap';
 
 export type StoreStatus = 'active' | 'pending' | 'archived';
+export type StoreOperationalStatus = 'active' | 'suspended' | 'archived';
+export type StoreOwnershipStatus = 'unclaimed' | 'claimed' | 'verified';
 
 export type GeolocationErrorType =
   | 'PERMISSION_DENIED'
@@ -27,7 +29,8 @@ export type StoreType = Store;
  */
 export interface Store {
   id: string;
-  ownerId?: string; // Firebase Auth UID of store owner (absent on demo & OSM fixtures)
+  ownerId?: string | null; // Firebase Auth UID of store owner (null or absent on unclaimed, demo, or OSM)
+  ownershipStatus?: StoreOwnershipStatus; // 'unclaimed' | 'claimed' | 'verified'
   name: string;
   city: string; // e.g., 'Nukus', 'Xo‘jayli', 'Qo‘ng‘irot'
   district?: string; // e.g., 'Nukus shahri', 'Xo‘jayli tumani', 'Beruniy tumani'
@@ -85,16 +88,20 @@ export interface CreateStoreInput {
   address: string;
   coordinates: Coordinates;
   category: string;
-  phone: string;
-  openingHours: string;
+  phone?: string;
+  openingHours?: string;
   description?: string;
   website?: string;
   placeType?: 'store' | 'service' | 'pharmacy' | 'workshop' | 'market';
+  ownerId?: string | null;
+  ownershipStatus?: StoreOwnershipStatus;
+  status?: StoreStatus;
+  isVerified?: boolean;
 }
 
 /**
  * Input for updating an existing store document
- * Note: isVerified, ownerId, and createdAt are protected and immutable.
+ * Note: isVerified, ownerId, and createdAt are protected and immutable for non-admin callers.
  */
 export interface UpdateStoreInput {
   name?: string;
@@ -108,4 +115,5 @@ export interface UpdateStoreInput {
   description?: string;
   website?: string;
   status?: StoreStatus;
+  ownershipStatus?: StoreOwnershipStatus;
 }

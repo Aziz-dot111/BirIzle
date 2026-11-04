@@ -72,7 +72,23 @@ const STORE_CATEGORIES = [
   { id: 'electronics', labelUz: 'Elektronika', labelRu: 'Электроника' },
 ];
 
-export const NearbyStoresSection: React.FC = () => {
+export interface NearbyStoresSectionProps {
+  initialSearchQuery?: string;
+  initialCategory?: string;
+  initialDistrict?: string;
+  initialStoreId?: string | null;
+  defaultViewMode?: 'both' | 'map' | 'list';
+  isFullPage?: boolean;
+}
+
+export const NearbyStoresSection: React.FC<NearbyStoresSectionProps> = ({
+  initialSearchQuery = '',
+  initialCategory = '',
+  initialDistrict = '',
+  initialStoreId = null,
+  defaultViewMode = 'both',
+  isFullPage = false,
+}) => {
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,16 +105,33 @@ export const NearbyStoresSection: React.FC = () => {
   // Geolocation & View State
   const [userCoords, setUserCoords] = useState<Coordinates | null>(null);
   const [radiusKm, setRadiusKm] = useState<number | null>(null);
-  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'both' | 'map' | 'list'>('both');
+  const [selectedStoreId, setSelectedStoreId] = useState<string | null>(initialStoreId);
+  const [viewMode, setViewMode] = useState<'both' | 'map' | 'list'>(defaultViewMode);
   const [sortBy, setSortBy] = useState<'distance' | 'price_asc' | 'price_desc' | 'name'>('distance');
 
   // Filters State: Category, Stock, District, Source, Search
-  const [selectedCategory, setSelectedCategory] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
   const [onlyInStock, setOnlyInStock] = useState<boolean>(false);
-  const [selectedDistrict, setSelectedDistrict] = useState<string>('');
+  const [selectedDistrict, setSelectedDistrict] = useState<string>(initialDistrict);
   const [sourceFilter, setSourceFilter] = useState<'all' | PlaceSourceType>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>(initialSearchQuery);
+
+  // Sync with incoming props if URL parameters change
+  useEffect(() => {
+    if (initialSearchQuery !== undefined) setSearchQuery(initialSearchQuery);
+  }, [initialSearchQuery]);
+
+  useEffect(() => {
+    if (initialCategory !== undefined) setSelectedCategory(initialCategory);
+  }, [initialCategory]);
+
+  useEffect(() => {
+    if (initialDistrict !== undefined) setSelectedDistrict(initialDistrict);
+  }, [initialDistrict]);
+
+  useEffect(() => {
+    if (initialStoreId !== undefined) setSelectedStoreId(initialStoreId);
+  }, [initialStoreId]);
 
   // Product Matching State
   const [activeProduct, setActiveProduct] = useState<ProductItem | null>(null);
@@ -298,7 +331,7 @@ export const NearbyStoresSection: React.FC = () => {
   };
 
   return (
-    <section id="stores-section" className="bq-stores-section">
+    <section id="stores-section" className={`bq-stores-section ${isFullPage ? 'bq-stores-section--fullpage' : ''}`}>
       <div className="container">
         {/* Section Header with Language Switcher */}
         <div className="bq-section-header">
@@ -619,7 +652,7 @@ export const NearbyStoresSection: React.FC = () => {
                   selectedStoreId={selectedStoreId}
                   radiusKm={radiusKm}
                   onSelectStore={handleSelectStore}
-                  height={viewMode === 'map' ? '540px' : '480px'}
+                  height={viewMode === 'map' ? (isFullPage ? '620px' : '540px') : (isFullPage ? '520px' : '480px')}
                   defaultCenter={CITY_CENTROIDS.Nukus}
                   lang={lang}
                 />

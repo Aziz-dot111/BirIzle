@@ -1,5 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as firestoreModule from 'firebase/firestore';
+import type {
+  Firestore,
+  DocumentReference,
+  CollectionReference,
+  Query,
+  DocumentData,
+} from 'firebase/firestore';
 import {
   mapDocumentToStore,
   mapDocumentToProduct,
@@ -14,6 +21,9 @@ import {
   getStoreProductOffers,
   clearStoreCache,
   createStore,
+  createAdminStore,
+  deactivateStore,
+  reactivateStore,
   updateStore,
   createOffer,
   updateOffer,
@@ -43,9 +53,9 @@ vi.mock('firebase/firestore', async () => {
   const actual = await vi.importActual<typeof firestoreModule>('firebase/firestore');
   return {
     ...actual,
-    collection: vi.fn((_db, name) => ({ path: name })),
-    doc: vi.fn((_db, _col, id) => ({ id: id || 'auto_doc_id' })),
-    query: vi.fn((col) => col),
+    collection: vi.fn((_db: Firestore, name: string) => ({ path: name })),
+    doc: vi.fn((_db: Firestore, _col: string | CollectionReference<DocumentData>, id?: string) => ({ id: id || 'auto_doc_id' })),
+    query: vi.fn((col: Query<DocumentData>) => col),
     where: vi.fn(),
     orderBy: vi.fn(),
     limit: vi.fn(),
@@ -87,6 +97,14 @@ describe('Firestore Catalog Service Layer', () => {
       expect(store.coordinates.lat).toBe(42.46);
       expect(store.coordinates.lng).toBe(59.61);
       expect(store.isVerified).toBe(true);
+      expect(store.ownershipStatus).toBe('unclaimed');
+
+      const claimedStore = mapDocumentToStore('store_claimed', {
+        ...rawData,
+        ownerId: 'usr_abc',
+      });
+      expect(claimedStore.ownershipStatus).toBe('claimed');
+      expect(claimedStore.ownerId).toBe('usr_abc');
     });
 
     it('correctly maps Firestore document to ProductItem type with search metadata', () => {
@@ -409,7 +427,7 @@ describe('Firestore Catalog Service Layer', () => {
       } as unknown as firestoreModule.QuerySnapshot);
 
       // 2. Mock getDoc for each store
-      vi.mocked(firestoreModule.getDoc).mockImplementation(async (docRef) => {
+      vi.mocked(firestoreModule.getDoc).mockImplementation(async (docRef: DocumentReference<unknown, DocumentData>) => {
         const id = (docRef as unknown as { id?: string })?.id || 'store_cheap';
         if (id === 'store_cheap') {
           return {
@@ -493,6 +511,56 @@ describe('Firestore Catalog Service Layer', () => {
       const res = await createStore({ ...validStoreInput, name: 'A' });
       expect(res.data).toBeNull();
       expect(res.error).toBeTruthy();
+    });
+
+    it('createAdminStore: rejects when caller is not an administrator', async () => {
+      mockCurrentUser.getIdTokenResult.mockResolvedValueOnce({ claims: {} });
+      const res = await createAdminStore(validStoreInput);
+      expect(res.data).toBeNull();
+      expect(res.error).toContain('administrator');
+    });
+
+    it('createAdminStore: succeeds when caller is admin, sets ownerId: null, unclaimed, verified and active', async () => {
+      mockCurrentUser.getIdTokenResult.mockResolvedValueOnce({ claims: { admin: true } });
+      const res = await createAdminStore(validStoreInput);
+      expect(res.error).toBeNull();
+      expect(res.data).toBeTruthy();
+      expect(res.data?.ownerId).toBeNull();
+      expect(res.data?.ownershipStatus).toBe('unclaimed');
+      expect(res.data?.isVerified).toBe(true);
+      expect(res.data?.status).toBe('active');
+    });
+
+    it('deactivateStore & reactivateStore: transitions store status between archived and active', async () => {
+      // 1. Deactivate
+      vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+        exists: () => true,
+        id: 'store_123',
+        data: () => ({
+          ...validStoreInput,
+          ownerId: 'mock_owner_123',
+          status: 'active',
+        }),
+      } as unknown as firestoreModule.DocumentSnapshot);
+
+      const deactRes = await deactivateStore('store_123');
+      expect(firestoreModule.updateDoc).toHaveBeenCalled();
+      expect(deactRes.error).toBeNull();
+
+      // 2. Reactivate
+      vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+        exists: () => true,
+        id: 'store_123',
+        data: () => ({
+          ...validStoreInput,
+          ownerId: 'mock_owner_123',
+          status: 'archived',
+        }),
+      } as unknown as firestoreModule.DocumentSnapshot);
+
+      const reactRes = await reactivateStore('store_123');
+      expect(firestoreModule.updateDoc).toHaveBeenCalled();
+      expect(reactRes.error).toBeNull();
     });
 
     it('updateStore: successfully updates store when caller is the owner', async () => {
