@@ -291,6 +291,13 @@
   border-radius: 9999px;
 }
 
+.bq-map-popup__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 8px;
+}
+
 .bq-map-popup__dir-btn {
   display: inline-flex;
   align-items: center;
@@ -309,6 +316,29 @@
 
 .bq-map-popup__dir-btn:hover {
   background-color: #047857;
+}
+
+.bq-map-popup__store-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0.4rem 0.75rem;
+  background-color: #f8fafc;
+  color: #0f172a;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.bq-map-popup__store-btn:hover {
+  background-color: #f1f5f9;
+  border-color: #059669;
+  color: #059669;
 }
 
 /* Map Legend Bar */

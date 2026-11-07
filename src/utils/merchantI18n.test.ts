@@ -72,4 +72,21 @@ describe('merchantI18n', () => {
       expect(texts.offersStagedNotice.length).toBeGreaterThan(0);
     });
   });
+
+  it('includes Phase 5.1 submission tabs, form fields, and status strings in both languages', () => {
+    (['uz', 'ru'] as const).forEach((lang) => {
+      const texts = MERCHANT_TRANSLATIONS[lang];
+      expect(texts.activeOffersTab.length).toBeGreaterThan(0);
+      expect(texts.submissionsTab.length).toBeGreaterThan(0);
+      expect(texts.selectExistingTab.length).toBeGreaterThan(0);
+      expect(texts.suggestNewTab.length).toBeGreaterThan(0);
+      expect(texts.newProdNameLabel.length).toBeGreaterThan(0);
+      expect(texts.newProdCategoryLabel.length).toBeGreaterThan(0);
+      expect(texts.statusPending.length).toBeGreaterThan(0);
+      expect(texts.statusApproved.length).toBeGreaterThan(0);
+      expect(texts.statusRejected.length).toBeGreaterThan(0);
+      expect(texts.adminNoteLabel.length).toBeGreaterThan(0);
+      expect(texts.duplicatePendingError.length).toBeGreaterThan(0);
+    });
+  });
 });

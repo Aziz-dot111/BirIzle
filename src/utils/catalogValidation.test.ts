@@ -12,6 +12,7 @@ import {
   validateProductSubmissionInput,
   validateOfferSubmissionInput,
   validateReviewSubmissionInput,
+  isValidHttpUrl,
 } from './catalogValidation';
 
 describe('Catalog Validation Utilities', () => {
@@ -94,6 +95,44 @@ describe('Catalog Validation Utilities', () => {
         }).isValid
       ).toBe(false);
     });
+
+    it('accepts store with valid https and http website URLs', () => {
+      expect(validateStoreInput({ ...validStore, website: 'https://nukus-texno.uz' }).isValid).toBe(true);
+      expect(validateStoreInput({ ...validStore, website: 'http://nukus-texno.uz' }).isValid).toBe(true);
+    });
+
+    it('strictly rejects store with javascript: or data: website URLs', () => {
+      expect(validateStoreInput({ ...validStore, website: 'javascript:alert(1)' }).isValid).toBe(false);
+      expect(validateStoreInput({ ...validStore, website: 'data:text/html,bad' }).isValid).toBe(false);
+    });
+
+    it('accepts store with empty or omitted website URL', () => {
+      expect(validateStoreInput({ ...validStore, website: '' }).isValid).toBe(true);
+      expect(validateStoreInput({ ...validStore, website: undefined }).isValid).toBe(true);
+    });
+  });
+
+  describe('isValidHttpUrl', () => {
+    it('returns true for valid https and http URLs', () => {
+      expect(isValidHttpUrl('https://example.com')).toBe(true);
+      expect(isValidHttpUrl('http://example.com/store/1')).toBe(true);
+      expect(isValidHttpUrl('  https://sub.domain.uz/page?id=1  ')).toBe(true);
+    });
+
+    it('returns false for dangerous or non-http schemes', () => {
+      expect(isValidHttpUrl('javascript:alert(1)')).toBe(false);
+      expect(isValidHttpUrl('data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==')).toBe(false);
+      expect(isValidHttpUrl('ftp://files.example.com')).toBe(false);
+      expect(isValidHttpUrl('file:///etc/passwd')).toBe(false);
+    });
+
+    it('returns false for empty, null, undefined, or excessively long strings', () => {
+      expect(isValidHttpUrl('')).toBe(false);
+      expect(isValidHttpUrl('   ')).toBe(false);
+      expect(isValidHttpUrl(null)).toBe(false);
+      expect(isValidHttpUrl(undefined)).toBe(false);
+      expect(isValidHttpUrl('https://' + 'a'.repeat(201))).toBe(false);
+    });
   });
 
   describe('validateProductInput', () => {
@@ -144,6 +183,13 @@ describe('Catalog Validation Utilities', () => {
       expect(res.error).toContain('manfiy');
     });
 
+    it('STRICT Phase 5.2: rejects zero price (price === 0)', () => {
+      const zeroOffer = { ...validOffer, price: 0 };
+      const res = validateOfferInput(zeroOffer);
+      expect(res.isValid).toBe(false);
+      expect(res.error).toContain('0 dan katta');
+    });
+
     it('rejects NaN or non-finite price', () => {
       expect(validateOfferInput({ ...validOffer, price: NaN }).isValid).toBe(false);
       expect(validateOfferInput({ ...validOffer, price: Infinity }).isValid).toBe(false);
@@ -175,6 +221,10 @@ describe('Catalog Validation Utilities', () => {
 
     it('rejects negative price in update', () => {
       expect(validateUpdateOfferInput({ price: -100 }).isValid).toBe(false);
+    });
+
+    it('STRICT Phase 5.2: rejects zero price in update', () => {
+      expect(validateUpdateOfferInput({ price: 0 }).isValid).toBe(false);
     });
 
     it('rejects warranty months > 120 or non-integer', () => {
@@ -247,6 +297,10 @@ describe('Catalog Validation Utilities', () => {
 
     it('rejects product submission with negative proposed price', () => {
       expect(validateProductSubmissionInput({ ...validProductSub, proposedPrice: -100 }).isValid).toBe(false);
+    });
+
+    it('STRICT Phase 5.2: rejects product submission with zero proposed price', () => {
+      expect(validateProductSubmissionInput({ ...validProductSub, proposedPrice: 0 }).isValid).toBe(false);
     });
 
     it('rejects product submission with invalid image URL', () => {

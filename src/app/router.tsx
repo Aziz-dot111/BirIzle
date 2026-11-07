@@ -8,6 +8,7 @@ import { SearchPage } from '@/pages/SearchPage';
 import { MapPage } from '@/pages/MapPage';
 import { FavoritesPage } from '@/pages/FavoritesPage';
 import { ProductDetailPage } from '@/pages/ProductDetailPage';
+import { StoreDetailPage } from '@/pages/StoreDetailPage';
 import { MerchantDashboardPage } from '@/pages/MerchantDashboardPage';
 import { MerchantApplyPage } from '@/pages/MerchantApplyPage';
 import { AdminStoresPage } from '@/pages/AdminStoresPage';
@@ -56,6 +57,10 @@ export const router = createBrowserRouter([
       {
         path: 'product/:id',
         element: <ProductDetailPage />,
+      },
+      {
+        path: 'store/:id',
+        element: <StoreDetailPage />,
       },
       {
         path: 'profile',

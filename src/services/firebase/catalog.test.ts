@@ -29,13 +29,24 @@ import {
   updateOffer,
   deleteOffer,
   getStoresByOwner,
+  createOfferSubmission,
+  reviewOfferSubmission,
+  getOfferSubmissions,
+  createProductSubmission,
+  reviewProductSubmission,
+  getProductSubmissions,
+  isStoreVisibleToCustomer,
 } from './catalog';
 
 const mockCurrentUser: {
   uid: string;
+  email?: string;
+  emailVerified?: boolean;
   getIdTokenResult: ReturnType<typeof vi.fn>;
 } = {
   uid: 'mock_owner_123',
+  email: 'merchant@oneshop.uz',
+  emailVerified: true,
   getIdTokenResult: vi.fn().mockResolvedValue({ claims: {} }),
 };
 
@@ -242,6 +253,51 @@ describe('Firestore Catalog Service Layer', () => {
       expect(res.data).toBeDefined();
       expect(res.data!.length).toBeGreaterThan(0);
       expect(res.data![0].city).toBe('Nukus');
+    });
+
+    it('enforces mandatory limit <= 25 and status: active on public store queries', async () => {
+      vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+        empty: true,
+        docs: [],
+      } as unknown as firestoreModule.QuerySnapshot);
+
+      await getStores({ includeOsm: false });
+      expect(firestoreModule.where).toHaveBeenCalledWith('status', '==', 'active');
+      expect(firestoreModule.limit).toHaveBeenCalledWith(25);
+    });
+
+    it('caps public store queries requesting more than 25 records to 25', async () => {
+      vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+        empty: true,
+        docs: [],
+      } as unknown as firestoreModule.QuerySnapshot);
+
+      await getStores({ limitCount: 50, includeOsm: false });
+      expect(firestoreModule.limit).toHaveBeenCalledWith(25);
+    });
+
+    it('respects public store queries requesting fewer than 25 records', async () => {
+      vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+        empty: true,
+        docs: [],
+      } as unknown as firestoreModule.QuerySnapshot);
+
+      await getStores({ limitCount: 10, includeOsm: false });
+      expect(firestoreModule.limit).toHaveBeenCalledWith(10);
+    });
+
+    it('maps legacy store documents missing status to active and visible', () => {
+      const legacyDocData = {
+        name: 'Legacy Eski Do‘kon',
+        city: 'Nukus',
+        address: 'Amir Temur 5',
+        category: 'electronics',
+        phone: '+998612221111',
+        isVerified: true,
+      };
+      const store = mapDocumentToStore('legacy_1', legacyDocData);
+      expect(store.status).toBe('active');
+      expect(isStoreVisibleToCustomer(store)).toBe(true);
     });
 
     it('fetches single store by storeId', async () => {
@@ -507,6 +563,14 @@ describe('Firestore Catalog Service Layer', () => {
       expect(firestoreModule.setDoc).toHaveBeenCalled();
     });
 
+    it('createStore: rejects when user email is not verified', async () => {
+      mockCurrentUser.emailVerified = false;
+      const res = await createStore(validStoreInput);
+      expect(res.data).toBeNull();
+      expect(res.error).toContain('elektron pochtangiz tasdiqlangan bo‘lishi shart');
+      mockCurrentUser.emailVerified = true;
+    });
+
     it('createStore: rejects invalid input before touching Firestore', async () => {
       const res = await createStore({ ...validStoreInput, name: 'A' });
       expect(res.data).toBeNull();
@@ -685,6 +749,406 @@ describe('Firestore Catalog Service Layer', () => {
       expect(res.data).toBeDefined();
       expect(res.data!.length).toBe(1);
       expect(res.data![0].ownerId).toBe('mock_owner_123');
+    });
+  });
+
+  describe('Phase 5.1: Merchant Product & Offer Submissions', () => {
+    describe('createOfferSubmission', () => {
+      it('fails when store does not exist', async () => {
+        vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+          exists: () => false,
+        } as unknown as firestoreModule.DocumentSnapshot);
+
+        const res = await createOfferSubmission({
+          storeId: 'store_missing',
+          productId: 'prod_1',
+          price: 1500000,
+        });
+
+        expect(res.data).toBeNull();
+        expect(res.error).toContain('topilmadi');
+      });
+
+      it('fails when caller is not the store owner and not an admin', async () => {
+        vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+          exists: () => true,
+          data: () => ({
+            ownerId: 'someone_else',
+            status: 'active',
+          }),
+        } as unknown as firestoreModule.DocumentSnapshot);
+
+        const res = await createOfferSubmission({
+          storeId: 'store_not_mine',
+          productId: 'prod_1',
+          price: 1500000,
+        });
+
+        expect(res.data).toBeNull();
+        expect(res.error).toContain('o‘zingizga tegishli do‘konga');
+      });
+
+      it('fails when store status is not active (e.g. pending or archived)', async () => {
+        vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+          exists: () => true,
+          data: () => ({
+            ownerId: 'mock_owner_123',
+            status: 'pending',
+          }),
+        } as unknown as firestoreModule.DocumentSnapshot);
+
+        const res = await createOfferSubmission({
+          storeId: 'store_pending',
+          productId: 'prod_1',
+          price: 1500000,
+        });
+
+        expect(res.data).toBeNull();
+        expect(res.error).toContain('Faqat faol va tasdiqlangan do‘konlar');
+      });
+
+      it('fails when a duplicate pending submission exists for same (storeId, productId, variantId)', async () => {
+        vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+          exists: () => true,
+          data: () => ({
+            ownerId: 'mock_owner_123',
+            status: 'active',
+          }),
+        } as unknown as firestoreModule.DocumentSnapshot);
+
+        // getDocs returns an existing pending submission
+        vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+          docs: [
+            {
+              id: 'pending_sub_1',
+              data: () => ({
+                storeId: 'store_1',
+                productId: 'prod_1',
+                status: 'pending',
+                variantId: null,
+              }),
+            },
+          ],
+        } as unknown as firestoreModule.QuerySnapshot);
+
+        const res = await createOfferSubmission({
+          storeId: 'store_1',
+          productId: 'prod_1',
+          price: 1500000,
+        });
+
+        expect(res.data).toBeNull();
+        expect(res.error).toBe('Ushbu mahsulot uchun arizangiz allaqachon moderator tekshiruvida turibdi.');
+      });
+
+      it('succeeds and creates pending offer submission when store is active and no duplicate exists', async () => {
+        vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+          exists: () => true,
+          data: () => ({
+            ownerId: 'mock_owner_123',
+            status: 'active',
+          }),
+        } as unknown as firestoreModule.DocumentSnapshot);
+
+        // getDocs for duplicate check returns empty
+        vi.mocked(firestoreModule.getDocs)
+          .mockResolvedValueOnce({ docs: [] } as unknown as firestoreModule.QuerySnapshot)
+          // getDocs for findOfferForStoreProduct
+          .mockResolvedValueOnce({ docs: [] } as unknown as firestoreModule.QuerySnapshot);
+
+        const res = await createOfferSubmission({
+          storeId: 'store_1',
+          productId: 'prod_1',
+          price: 2500000,
+          availability: 'in_stock',
+          warrantyMonths: 12,
+          deliveryAvailable: true,
+          notes: 'Original qadoqda',
+        });
+
+        expect(res.error).toBeNull();
+        expect(res.data).toBeDefined();
+        expect(res.data?.status).toBe('pending');
+        expect(res.data?.price).toBe(2500000);
+        expect(res.data?.merchantUid).toBe('mock_owner_123');
+        expect(res.data?.version).toBe(0);
+        expect(firestoreModule.setDoc).toHaveBeenCalled();
+      });
+    });
+
+    describe('createProductSubmission', () => {
+      it('fails when store does not exist', async () => {
+        vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+          exists: () => false,
+        } as unknown as firestoreModule.DocumentSnapshot);
+
+        const res = await createProductSubmission({
+          storeId: 'store_missing',
+          name: 'Yangi Smartfon X',
+          category: 'phones',
+        });
+
+        expect(res.data).toBeNull();
+        expect(res.error).toContain('topilmadi');
+      });
+
+      it('fails when store status is inactive or suspended', async () => {
+        vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+          exists: () => true,
+          data: () => ({
+            ownerId: 'mock_owner_123',
+            status: 'archived',
+          }),
+        } as unknown as firestoreModule.DocumentSnapshot);
+
+        const res = await createProductSubmission({
+          storeId: 'store_archived',
+          name: 'Yangi Smartfon X',
+          category: 'phones',
+        });
+
+        expect(res.data).toBeNull();
+        expect(res.error).toContain('Faqat faol va tasdiqlangan do‘konlar');
+      });
+
+      it('fails with duplicate error when identical pending product submission exists for store', async () => {
+        vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+          exists: () => true,
+          data: () => ({
+            ownerId: 'mock_owner_123',
+            status: 'active',
+          }),
+        } as unknown as firestoreModule.DocumentSnapshot);
+
+        vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+          docs: [
+            {
+              id: 'pending_prod_sub_1',
+              data: () => ({
+                name: 'yangi smartfon x',
+                status: 'pending',
+              }),
+            },
+          ],
+        } as unknown as firestoreModule.QuerySnapshot);
+
+        const res = await createProductSubmission({
+          storeId: 'store_1',
+          name: '  Yangi Smartfon X  ',
+          category: 'phones',
+        });
+
+        expect(res.data).toBeNull();
+        expect(res.error).toBe('Ushbu mahsulot bo‘yicha arizangiz allaqachon moderator tekshiruvida turibdi.');
+      });
+
+      it('succeeds and creates pending product submission doc', async () => {
+        vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+          exists: () => true,
+          data: () => ({
+            ownerId: 'mock_owner_123',
+            status: 'active',
+          }),
+        } as unknown as firestoreModule.DocumentSnapshot);
+
+        vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+          docs: [],
+        } as unknown as firestoreModule.QuerySnapshot);
+
+        const res = await createProductSubmission({
+          storeId: 'store_1',
+          name: 'Xiaomi Redmi Note 13',
+          category: 'phones',
+          brand: 'Xiaomi',
+          model: '2312DRAABG',
+          barcode: '6941812759905',
+          proposedPrice: 2800000,
+        });
+
+        expect(res.error).toBeNull();
+        expect(res.data).toBeDefined();
+        expect(res.data?.status).toBe('pending');
+        expect(res.data?.name).toBe('Xiaomi Redmi Note 13');
+        expect(res.data?.brand).toBe('Xiaomi');
+        expect(res.data?.proposedPrice).toBe(2800000);
+        expect(firestoreModule.setDoc).toHaveBeenCalled();
+      });
+    });
+
+    describe('getProductSubmissions and getOfferSubmissions', () => {
+      it('getProductSubmissions: returns list of product submissions filtered by store', async () => {
+        vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+          docs: [
+            {
+              id: 'sub_prod_1',
+              data: () => ({
+                storeId: 'store_1',
+                merchantUid: 'mock_owner_123',
+                name: 'Test Device',
+                category: 'electronics',
+                status: 'pending',
+                createdAt: '2026-10-26T00:00:00.000Z',
+                updatedAt: '2026-10-26T00:00:00.000Z',
+              }),
+            },
+          ],
+        } as unknown as firestoreModule.QuerySnapshot);
+
+        const res = await getProductSubmissions({ storeId: 'store_1' });
+        expect(res.error).toBeNull();
+        expect(res.data).toHaveLength(1);
+        expect(res.data![0].id).toBe('sub_prod_1');
+        expect(res.data![0].name).toBe('Test Device');
+      });
+
+      it('getOfferSubmissions: returns list of offer submissions', async () => {
+        vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+          docs: [
+            {
+              id: 'sub_offer_1',
+              data: () => ({
+                storeId: 'store_1',
+                productId: 'prod_1',
+                price: 1200000,
+                status: 'pending',
+                createdAt: '2026-10-26T00:00:00.000Z',
+                updatedAt: '2026-10-26T00:00:00.000Z',
+              }),
+            },
+          ],
+        } as unknown as firestoreModule.QuerySnapshot);
+
+        const res = await getOfferSubmissions({ storeId: 'store_1' });
+        expect(res.error).toBeNull();
+        expect(res.data).toHaveLength(1);
+        expect(res.data![0].price).toBe(1200000);
+      });
+    });
+
+    describe('reviewOfferSubmission', () => {
+      it('rejects review when caller is not admin', async () => {
+        mockCurrentUser.getIdTokenResult.mockResolvedValueOnce({ claims: {} });
+
+        const res = await reviewOfferSubmission('sub_offer_1', { status: 'approved' });
+        expect(res.data).toBeNull();
+        expect(res.error).toContain('administratorlar');
+      });
+
+      it('successfully rejects offer submission with adminNotes', async () => {
+        mockCurrentUser.getIdTokenResult.mockResolvedValueOnce({ claims: { admin: true } });
+
+        vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+          exists: () => true,
+          data: () => ({
+            storeId: 'store_1',
+            productId: 'prod_1',
+            merchantUid: 'merchant_1',
+            price: 50000,
+            status: 'pending',
+          }),
+        } as unknown as firestoreModule.DocumentSnapshot);
+
+        const res = await reviewOfferSubmission('sub_offer_1', {
+          status: 'rejected',
+          adminNotes: 'Noto‘g‘ri narx ko‘rsatilgan.',
+        });
+
+        expect(res.error).toBeNull();
+        expect(res.data?.status).toBe('rejected');
+        expect(res.data?.adminNotes).toBe('Noto‘g‘ri narx ko‘rsatilgan.');
+        expect(firestoreModule.updateDoc).toHaveBeenCalled();
+      });
+
+      it('successfully approves offer submission and creates new canonical offer', async () => {
+        mockCurrentUser.getIdTokenResult.mockResolvedValueOnce({ claims: { admin: true } });
+
+        vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+          exists: () => true,
+          data: () => ({
+            storeId: 'store_1',
+            productId: 'prod_1',
+            merchantUid: 'merchant_1',
+            price: 2500000,
+            status: 'pending',
+          }),
+        } as unknown as firestoreModule.DocumentSnapshot);
+
+        // findOfferForStoreProduct returns null (brand new offer)
+        vi.mocked(firestoreModule.getDocs).mockResolvedValueOnce({
+          docs: [],
+        } as unknown as firestoreModule.QuerySnapshot);
+
+        const res = await reviewOfferSubmission('sub_offer_1', {
+          status: 'approved',
+        });
+
+        expect(res.error).toBeNull();
+        expect(res.data?.status).toBe('approved');
+        expect(res.data?.approvedOfferId).toContain('offer|s:');
+        expect(firestoreModule.setDoc).toHaveBeenCalled();
+      });
+    });
+
+    describe('reviewProductSubmission', () => {
+      it('rejects review when caller is not admin', async () => {
+        mockCurrentUser.getIdTokenResult.mockResolvedValueOnce({ claims: {} });
+
+        const res = await reviewProductSubmission('sub_1', { status: 'approved' });
+        expect(res.data).toBeNull();
+        expect(res.error).toContain('administratorlar');
+      });
+
+      it('successfully rejects product submission with adminNotes and audit info', async () => {
+        mockCurrentUser.getIdTokenResult.mockResolvedValueOnce({ claims: { admin: true } });
+
+        vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+          exists: () => true,
+          data: () => ({
+            storeId: 'store_1',
+            merchantUid: 'merchant_1',
+            name: 'Fake Item',
+            category: 'other',
+            status: 'pending',
+          }),
+        } as unknown as firestoreModule.DocumentSnapshot);
+
+        const res = await reviewProductSubmission('sub_1', {
+          status: 'rejected',
+          adminNotes: 'Rasmi sifatsiz yoki haqiqiy emas.',
+        });
+
+        expect(res.error).toBeNull();
+        expect(res.data?.status).toBe('rejected');
+        expect(res.data?.adminNotes).toBe('Rasmi sifatsiz yoki haqiqiy emas.');
+        expect(firestoreModule.updateDoc).toHaveBeenCalled();
+      });
+
+      it('successfully approves product submission and creates product in /products when approvedProductId not provided', async () => {
+        mockCurrentUser.getIdTokenResult.mockResolvedValueOnce({ claims: { admin: true } });
+
+        vi.mocked(firestoreModule.getDoc).mockResolvedValueOnce({
+          exists: () => true,
+          data: () => ({
+            storeId: 'store_1',
+            merchantUid: 'merchant_1',
+            name: 'Artel Televizor 43 dyuym',
+            category: 'electronics',
+            brand: 'Artel',
+            proposedPrice: 3500000,
+            status: 'pending',
+          }),
+        } as unknown as firestoreModule.DocumentSnapshot);
+
+        const res = await reviewProductSubmission('sub_1', {
+          status: 'approved',
+        });
+
+        expect(res.error).toBeNull();
+        expect(res.data?.status).toBe('approved');
+        expect(res.data?.approvedProductId).toBeDefined();
+        expect(firestoreModule.setDoc).toHaveBeenCalled();
+        expect(firestoreModule.updateDoc).toHaveBeenCalled();
+      });
     });
   });
 });

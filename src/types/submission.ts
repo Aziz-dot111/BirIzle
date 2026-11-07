@@ -132,6 +132,9 @@ export interface OfferSubmission {
   merchantEmail: string;
   storeId: string; // Must belong to authenticated merchant
   productId: string; // Target approved /products/{id}
+  variantId?: string; // Optional variant identifier
+  targetOfferId?: string | null; // Points to existing offer if updating
+  version?: number; // Base version of the existing offer being modified (legacy defaults to 1)
   price: number; // Non-negative amount (price >= 0)
   currency: CurrencyCode; // 'UZS' | 'USD'
   availability: OfferAvailability; // 'in_stock' | 'out_of_stock' | 'pre_order' | 'on_demand'
@@ -154,6 +157,9 @@ export interface OfferSubmission {
 export interface CreateOfferSubmissionInput {
   storeId: string;
   productId: string;
+  variantId?: string;
+  targetOfferId?: string;
+  version?: number;
   price: number;
   currency?: CurrencyCode;
   availability?: OfferAvailability;
@@ -168,6 +174,7 @@ export interface CreateOfferSubmissionInput {
 export interface ReviewOfferSubmissionInput {
   status: 'approved' | 'rejected';
   adminNotes?: string;
+  approvedOfferId?: string;
 }
 
 export type { StoreOperationalStatus };

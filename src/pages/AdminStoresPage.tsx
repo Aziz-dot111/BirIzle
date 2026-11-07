@@ -83,6 +83,7 @@ export const AdminStoresPage: React.FC = () => {
         includeDemo: true, // Allow fallback if spark plan demo
         includeOsm: false, // Focus purely on BirQidir managed stores
         sourceType: 'birqidir',
+        includeAllStatuses: true,
       });
       if (res.data) {
         setStores(res.data);

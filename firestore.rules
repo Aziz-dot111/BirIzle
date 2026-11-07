@@ -125,14 +125,126 @@ service cloud.firestore {
     }
 
     // =========================================================================
+    // STORE FIELD-LEVEL VALIDATION & APPLICATION INTEGRITY (PHASE 5.2)
+    // =========================================================================
+
+    // Store creation fields allowlist: prevents privilege escalation and injection
+    // of unauthorized fields (e.g. isAdmin, adminNotes, isVerified: true, status: 'active')
+    function hasOnlyValidStoreKeys(data) {
+      return data.keys().hasOnly([
+        'name', 'city', 'district', 'address', 'coordinates', 'category',
+        'phone', 'openingHours', 'description', 'website', 'placeType',
+        'ownerId', 'isVerified', 'status', 'sourceType', 'isDemo',
+        'ownershipStatus', 'createdAt', 'updatedAt'
+      ]);
+    }
+
+    // Mandatory keys required on store creation
+    function hasRequiredStoreKeys(data) {
+      return data.keys().hasAll([
+        'name', 'city', 'address', 'coordinates', 'category',
+        'phone', 'openingHours', 'placeType',
+        'ownerId', 'isVerified', 'status', 'sourceType', 'isDemo',
+        'createdAt', 'updatedAt'
+      ]);
+    }
+
+    // Comprehensive validation for merchant store applications
+    function isValidMerchantStoreCreate(data) {
+      return hasRequiredStoreKeys(data)
+        && hasOnlyValidStoreKeys(data)
+        && data.ownerId == request.auth.uid
+        && data.isVerified == false
+        && data.status == 'pending'
+        && data.isDemo == false
+        && data.sourceType == 'birqidir'
+        && (!('ownershipStatus' in data) || data.ownershipStatus == 'claimed')
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 100
+        && data.city is string && data.city.size() >= 2 && data.city.size() <= 100
+        && (!('district' in data) || data.district == null || (data.district is string && data.district.size() <= 100))
+        && data.address is string && data.address.size() >= 5 && data.address.size() <= 200
+        && data.category is string && data.category.size() >= 2 && data.category.size() <= 100
+        && data.phone is string && data.phone.size() >= 7 && data.phone.size() <= 25
+        && data.openingHours is string && data.openingHours.size() >= 3 && data.openingHours.size() <= 100
+        && (!('description' in data) || data.description == null || (data.description is string && data.description.size() <= 1000))
+        && (!('website' in data) || data.website == null || data.website == '' || (data.website is string && data.website.size() <= 200 && data.website.matches('^https?://.*')))
+        && data.placeType in ['store', 'service', 'pharmacy', 'workshop', 'market']
+        && data.coordinates is map
+        && data.coordinates.lat is number && data.coordinates.lat >= -90.0 && data.coordinates.lat <= 90.0
+        && data.coordinates.lng is number && data.coordinates.lng >= -180.0 && data.coordinates.lng <= 180.0
+        && data.createdAt is timestamp && data.createdAt == request.time
+        && data.updatedAt is timestamp && data.updatedAt == request.time;
+    }
+
+    // STATUS DENY PRECEDENCE (PHASE 5.2 HARDENING):
+    // Prevents public read of stores in non-active lifecycle states
+    // (pending, archived, inactive, suspended), even if isVerified, isDemo, or sourceType: openstreetmap is present.
+    function isStoreBlockedForPublic(data) {
+      return ('status' in data) && (data.status in ['pending', 'archived', 'inactive', 'suspended']);
+    }
+
+    // Comprehensive public read decision:
+    // Blocked statuses strictly override all public conditions.
+    function isStorePubliclyReadable(data) {
+      return !isStoreBlockedForPublic(data)
+        && (
+          data.status == 'active'
+          || data.isVerified == true
+          || data.isDemo == true
+          || data.sourceType == 'openstreetmap'
+          || (!('status' in data) && !('ownerId' in data))
+        );
+    }
+
+    // =========================================================================
     // STORES CATALOG: /stores/{storeId}
     // =========================================================================
     match /stores/{storeId} {
-      // Public read access for finding local stores and coordinates in Nukus
-      allow read: if true;
+      // 1. READ (GET):
+      // Public customer can only read active real stores, active demo stores, active OSM places,
+      // and verified legacy catalog entries without status.
+      // HARDENING: If status is 'pending', 'archived', 'inactive', or 'suspended', public read
+      // is STRICTLY DENIED, overriding isVerified, isDemo, or sourceType: openstreetmap.
+      // - The merchant applicant can read their own store (ownerId == request.auth.uid)
+      // - Administrators have full oversight of all stores (isAdmin())
+      allow get: if isStorePubliclyReadable(resource.data)
+                 || (isAuthenticated() && request.auth.uid == resource.data.ownerId)
+                 || isAdmin();
 
-      // Mutations strictly reserved for verified server administrators
-      allow write: if isAdmin();
+      // 2. READ (LIST):
+      // - Administrators can list all stores across all statuses without restrictions (isAdmin())
+      // - Merchants can query their own stores (ownerId == auth.uid with explicit limit <= 25)
+      // - Public customer queries must explicitly filter by status == 'active' with explicit limit <= 25
+      // Unbounded queries or queries requesting more than 25 records are strictly DENIED for public and merchants.
+      allow list: if isAdmin()
+                  || (
+                    isAuthenticated()
+                    && ('limit' in request.query)
+                    && request.query.limit > 0
+                    && request.query.limit <= 25
+                    && resource.data.ownerId == request.auth.uid
+                  )
+                  || (
+                    ('limit' in request.query)
+                    && request.query.limit > 0
+                    && request.query.limit <= 25
+                    && resource.data.status == 'active'
+                  );
+
+      // 3. CREATE:
+      // - Verified server administrators can create any store (seeds, claimed, demo)
+      // - Authenticated merchants with verified email can submit new store applications
+      //   strictly with status: 'pending', isVerified: false, and ownerId bound to their UID.
+      allow create: if isAdmin()
+                    || (
+                      isAuthenticated()
+                      && isEmailVerified()
+                      && isValidMerchantStoreCreate(request.resource.data)
+                    );
+
+      // 4. UPDATE & DELETE:
+      // Strictly reserved for administrators. Merchants cannot self-verify or approve stores.
+      allow update, delete: if isAdmin();
     }
 
     // =========================================================================
@@ -156,6 +268,376 @@ service cloud.firestore {
       // Mutations strictly reserved for verified server administrators
       // (Merchant scoped updates will be introduced with store claim in Stage 4)
       allow write: if isAdmin();
+    }
+
+    // =========================================================================
+    // ORDER FIELD-LEVEL VALIDATION & INTEGRITY HELPERS (PHASE 5.2)
+    // =========================================================================
+
+    // Order fields allowlist: strictly prevents privilege escalation and injection
+    // of unauthorized fields (e.g. isAdmin, role, permissions, adminNotes, discount)
+    function hasOnlyValidOrderKeys(data) {
+      return data.keys().hasOnly([
+        'customerUid', 'customerEmail', 'customerName', 'customerPhone',
+        'storeId', 'storeOwnerId', 'storeName',
+        'productId', 'productName',
+        'offerId', 'variantId',
+        'price', 'currency', 'quantity', 'totalAmount',
+        'customerNote', 'merchantNotes',
+        'status', 'statusChangedAt', 'statusChangedBy',
+        'createdAt', 'updatedAt'
+      ]);
+    }
+
+    // Mandatory keys required on order creation
+    function hasRequiredOrderKeys(data) {
+      return data.keys().hasAll([
+        'customerUid', 'customerEmail', 'customerName', 'customerPhone',
+        'storeId', 'storeOwnerId', 'storeName',
+        'productId', 'productName',
+        'offerId',
+        'price', 'currency', 'quantity', 'totalAmount',
+        'status', 'statusChangedAt', 'statusChangedBy',
+        'createdAt', 'updatedAt'
+      ]);
+    }
+
+    // Verify caller is the current authorized owner of the store in the canonical Store doc
+    function isCurrentStoreOwner(storeId) {
+      return isAuthenticated()
+        && exists(/databases/$(database)/documents/stores/$(storeId))
+        && get(/databases/$(database)/documents/stores/$(storeId)).data.ownerId == request.auth.uid;
+    }
+
+    // Store reference and snapshot integrity validation
+    function isValidStoreForOrder(storeId, storeOwnerId, storeName) {
+      return exists(/databases/$(database)/documents/stores/$(storeId))
+        && isValidStoreData(get(/databases/$(database)/documents/stores/$(storeId)).data, storeOwnerId, storeName);
+    }
+
+    function isValidStoreData(store, storeOwnerId, storeName) {
+      return store.ownerId == storeOwnerId
+        && store.name == storeName
+        && (store.status == 'active' || (!('status' in store) && store.isVerified == true))
+        && (!('isDemo' in store) || store.isDemo != true)
+        && (!('sourceType' in store) || store.sourceType != 'openstreetmap')
+        && (!('ownershipStatus' in store) || store.ownershipStatus != 'unclaimed');
+    }
+
+    // Product reference and catalog validity validation
+    function isValidProductForOrder(productId, productName) {
+      return exists(/databases/$(database)/documents/products/$(productId))
+        && isValidProductData(get(/databases/$(database)/documents/products/$(productId)).data, productName);
+    }
+
+    function isValidProductData(product, productName) {
+      return product.name == productName
+        && (!('isDemo' in product) || product.isDemo != true)
+        && (!('isArchived' in product) || product.isArchived != true);
+    }
+
+    // Offer reference, status, and pricing integrity validation
+    function isValidOfferForOrder(offerId, storeId, productId, price, currency, orderData) {
+      return exists(/databases/$(database)/documents/offers/$(offerId))
+        && isValidOfferData(get(/databases/$(database)/documents/offers/$(offerId)).data, storeId, productId, price, currency, orderData);
+    }
+
+    function isValidOfferData(offer, storeId, productId, price, currency, orderData) {
+      return offer.storeId == storeId
+        && offer.productId == productId
+        && offer.price == price
+        && offer.currency == currency
+        && (!('isSuperseded' in offer) || offer.isSuperseded != true)
+        && (!('status' in offer) || !(offer.status in ['archived', 'superseded', 'pending']))
+        && (!('isDemo' in offer) || offer.isDemo != true)
+        && (
+          (!('variantId' in offer) || offer.variantId == null || offer.variantId == '')
+            ? (!('variantId' in orderData) || orderData.variantId == null || orderData.variantId == '')
+            : (('variantId' in orderData) && orderData.variantId == offer.variantId)
+        );
+    }
+
+    // =========================================================================
+    // ORDERS & LEADS: /orders/{orderId}
+    // =========================================================================
+    match /orders/{orderId} {
+      // 1. READ:
+      // - Customer reads only their own orders
+      // - Current store owner reads orders for their store (enforcing real-time ownership;
+      //   transferred or revoked merchants immediately lose access to protect customer PII)
+      // - Administrator has oversight
+      // NOTE: Queries must have limit <= 25 and match the required where filters:
+      // Customer: where('customerUid', '==', request.auth.uid)
+      // Merchant: where('storeOwnerId', '==', request.auth.uid)
+      allow get: if isAuthenticated() && (
+        request.auth.uid == resource.data.customerUid ||
+        isCurrentStoreOwner(resource.data.storeId) ||
+        isAdmin()
+      );
+
+      allow list: if isAuthenticated() && (
+        request.query.limit <= 25 && (
+          resource.data.customerUid == request.auth.uid ||
+          (resource.data.storeOwnerId == request.auth.uid && isCurrentStoreOwner(resource.data.storeId)) ||
+          isAdmin()
+        )
+      );
+
+      // 2. CREATE:
+      // - Customer must be authenticated with a verified email
+      // - customerUid must match caller auth.uid
+      // - customerEmail must match caller auth.token.email
+      // - status must be 'pending'
+      // - statusChangedBy must match caller auth.uid
+      // - Strict quantity (integer 1..99) and positive price (> 0)
+      // - Strict totalAmount == price * quantity
+      // - Immutable timestamps (request.time)
+      // - Strict field allowlist (prevents injecting role, adminNotes, etc.)
+      // - Cross-document reference validation:
+      //   * Store must exist, be active, non-demo, non-OSM, claimed, and matching storeOwnerId & storeName
+      //   * Product must exist, be non-demo, non-archived, and matching productName
+      //   * Offer must exist, be active, non-superseded, non-demo, and matching storeId, productId, price, currency, variantId
+      allow create: if isAuthenticated()
+                    && isEmailVerified()
+                    && hasRequiredOrderKeys(request.resource.data)
+                    && hasOnlyValidOrderKeys(request.resource.data)
+                    && request.resource.data.customerUid == request.auth.uid
+                    && request.resource.data.customerEmail == request.auth.token.email
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.statusChangedBy == request.auth.uid
+                    && request.resource.data.quantity is int
+                    && request.resource.data.quantity >= 1
+                    && request.resource.data.quantity <= 99
+                    && request.resource.data.price is number
+                    && request.resource.data.price > 0
+                    && request.resource.data.currency in ['UZS', 'USD']
+                    && request.resource.data.totalAmount is number
+                    && request.resource.data.totalAmount == request.resource.data.price * request.resource.data.quantity
+                    && request.resource.data.customerName is string
+                    && request.resource.data.customerName.size() >= 2
+                    && request.resource.data.customerName.size() <= 100
+                    && request.resource.data.customerPhone is string
+                    && request.resource.data.customerPhone.size() >= 7
+                    && request.resource.data.customerPhone.size() <= 20
+                    && (!('customerNote' in request.resource.data)
+                        || request.resource.data.customerNote == null
+                        || (request.resource.data.customerNote is string && request.resource.data.customerNote.size() <= 500))
+                    && (!('merchantNotes' in request.resource.data)
+                        || request.resource.data.merchantNotes == null)
+                    && request.resource.data.createdAt is timestamp
+                    && request.resource.data.createdAt == request.time
+                    && request.resource.data.updatedAt is timestamp
+                    && request.resource.data.updatedAt == request.time
+                    && request.resource.data.statusChangedAt is timestamp
+                    && request.resource.data.statusChangedAt == request.time
+                    && isValidStoreForOrder(request.resource.data.storeId, request.resource.data.storeOwnerId, request.resource.data.storeName)
+                    && isValidProductForOrder(request.resource.data.productId, request.resource.data.productName)
+                    && isValidOfferForOrder(request.resource.data.offerId, request.resource.data.storeId, request.resource.data.productId, request.resource.data.price, request.resource.data.currency, request.resource.data);
+
+      // 3. UPDATE:
+      // Strictly follows the state machine:
+      // - All snapshot fields (customerUid, customerEmail, customerName, customerPhone,
+      //   storeId, storeOwnerId, storeName, productId, productName, offerId, variantId,
+      //   price, currency, quantity, totalAmount, createdAt) are strictly IMMUTABLE!
+      // - Customer can only cancel their own pending order (pending -> cancelled)
+      // - Current Store Owner can accept/reject pending (pending -> accepted/rejected)
+      //   and complete accepted (accepted -> completed)
+      // - Admin can perform valid updates
+      allow update: if isAuthenticated()
+                    && request.resource.data.customerUid == resource.data.customerUid
+                    && request.resource.data.customerEmail == resource.data.customerEmail
+                    && request.resource.data.customerName == resource.data.customerName
+                    && request.resource.data.customerPhone == resource.data.customerPhone
+                    && request.resource.data.storeId == resource.data.storeId
+                    && request.resource.data.storeOwnerId == resource.data.storeOwnerId
+                    && request.resource.data.storeName == resource.data.storeName
+                    && request.resource.data.productId == resource.data.productId
+                    && request.resource.data.productName == resource.data.productName
+                    && request.resource.data.offerId == resource.data.offerId
+                    && (
+                      (!('variantId' in resource.data) || resource.data.variantId == null)
+                        ? (!('variantId' in request.resource.data) || request.resource.data.variantId == null)
+                        : (request.resource.data.variantId == resource.data.variantId)
+                    )
+                    && request.resource.data.price == resource.data.price
+                    && request.resource.data.currency == resource.data.currency
+                    && request.resource.data.quantity == resource.data.quantity
+                    && request.resource.data.totalAmount == resource.data.totalAmount
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && request.resource.data.updatedAt is timestamp
+                    && request.resource.data.updatedAt == request.time
+                    && request.resource.data.statusChangedAt is timestamp
+                    && request.resource.data.statusChangedAt == request.time
+                    && request.resource.data.statusChangedBy == request.auth.uid
+                    && (
+                      // Case A: Customer cancelling their own pending order
+                      (
+                        request.auth.uid == resource.data.customerUid
+                        && resource.data.status == 'pending'
+                        && request.resource.data.status == 'cancelled'
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusChangedAt', 'statusChangedBy', 'updatedAt'])
+                      )
+                      ||
+                      // Case B: Current Store Owner accepting/rejecting pending order
+                      (
+                        isCurrentStoreOwner(resource.data.storeId)
+                        && resource.data.status == 'pending'
+                        && request.resource.data.status in ['accepted', 'rejected']
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusChangedAt', 'statusChangedBy', 'updatedAt', 'merchantNotes'])
+                        && (!('merchantNotes' in request.resource.data) || request.resource.data.merchantNotes == null || (request.resource.data.merchantNotes is string && request.resource.data.merchantNotes.size() <= 500))
+                      )
+                      ||
+                      // Case C: Current Store Owner completing accepted order
+                      (
+                        isCurrentStoreOwner(resource.data.storeId)
+                        && resource.data.status == 'accepted'
+                        && request.resource.data.status == 'completed'
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'statusChangedAt', 'statusChangedBy', 'updatedAt', 'merchantNotes'])
+                        && (!('merchantNotes' in request.resource.data) || request.resource.data.merchantNotes == null || (request.resource.data.merchantNotes is string && request.resource.data.merchantNotes.size() <= 500))
+                      )
+                      ||
+                      // Case D: Admin override
+                      isAdmin()
+                    );
+
+      // 4. DELETE: Strictly prohibited for all users and admins to preserve audit trail
+      allow delete: if false;
+    }
+
+    // =========================================================================
+    // SUBMISSION VALIDATION & INTEGRITY HELPERS (SEC-HIGH-01)
+    // =========================================================================
+
+    function isCurrentActiveStoreOwner(storeId) {
+      return isAuthenticated()
+        && exists(/databases/$(database)/documents/stores/$(storeId))
+        && get(/databases/$(database)/documents/stores/$(storeId)).data.ownerId == request.auth.uid
+        && (
+          get(/databases/$(database)/documents/stores/$(storeId)).data.status == 'active'
+          || (!('status' in get(/databases/$(database)/documents/stores/$(storeId)).data)
+              && get(/databases/$(database)/documents/stores/$(storeId)).data.isVerified == true)
+        );
+    }
+
+    function hasOnlyValidProductSubmissionKeys(data) {
+      return data.keys().hasOnly([
+        'merchantUid', 'merchantEmail', 'storeId', 'name', 'category',
+        'brand', 'model', 'barcode', 'imageUrl', 'description',
+        'variant', 'specifications', 'proposedPrice',
+        'status', 'adminNotes', 'reviewedBy', 'reviewedAt',
+        'approvedProductId', 'createdAt', 'updatedAt'
+      ]);
+    }
+
+    function hasRequiredProductSubmissionKeys(data) {
+      return data.keys().hasAll([
+        'merchantUid', 'merchantEmail', 'storeId', 'name', 'category',
+        'status', 'createdAt', 'updatedAt'
+      ]);
+    }
+
+    function isValidMerchantProductSubmissionCreate(data) {
+      return hasRequiredProductSubmissionKeys(data)
+        && hasOnlyValidProductSubmissionKeys(data)
+        && data.merchantUid == request.auth.uid
+        && data.merchantEmail == request.auth.token.email
+        && data.status == 'pending'
+        && (!('adminNotes' in data) || data.adminNotes == null)
+        && (!('reviewedBy' in data) || data.reviewedBy == null)
+        && (!('reviewedAt' in data) || data.reviewedAt == null)
+        && (!('approvedProductId' in data) || data.approvedProductId == null)
+        && data.name is string && data.name.size() >= 2 && data.name.size() <= 150
+        && data.category is string && data.category.size() >= 2 && data.category.size() <= 100
+        && (!('proposedPrice' in data) || data.proposedPrice == null || (data.proposedPrice is number && data.proposedPrice > 0))
+        && data.createdAt is timestamp && data.createdAt == request.time
+        && data.updatedAt is timestamp && data.updatedAt == request.time
+        && isCurrentActiveStoreOwner(data.storeId);
+    }
+
+    function hasOnlyValidOfferSubmissionKeys(data) {
+      return data.keys().hasOnly([
+        'merchantUid', 'merchantEmail', 'storeId', 'productId', 'variantId',
+        'targetOfferId', 'version', 'price', 'currency', 'availability',
+        'warrantyMonths', 'deliveryAvailable', 'notes',
+        'status', 'adminNotes', 'reviewedBy', 'reviewedAt',
+        'approvedOfferId', 'createdAt', 'updatedAt'
+      ]);
+    }
+
+    function hasRequiredOfferSubmissionKeys(data) {
+      return data.keys().hasAll([
+        'merchantUid', 'merchantEmail', 'storeId', 'productId',
+        'price', 'currency', 'availability',
+        'status', 'createdAt', 'updatedAt'
+      ]);
+    }
+
+    function isValidMerchantOfferSubmissionCreate(data) {
+      return hasRequiredOfferSubmissionKeys(data)
+        && hasOnlyValidOfferSubmissionKeys(data)
+        && data.merchantUid == request.auth.uid
+        && data.merchantEmail == request.auth.token.email
+        && data.status == 'pending'
+        && (!('adminNotes' in data) || data.adminNotes == null)
+        && (!('reviewedBy' in data) || data.reviewedBy == null)
+        && (!('reviewedAt' in data) || data.reviewedAt == null)
+        && (!('approvedOfferId' in data) || data.approvedOfferId == null)
+        && data.price is number && data.price > 0
+        && data.currency in ['UZS', 'USD']
+        && data.availability in ['in_stock', 'out_of_stock', 'pre_order', 'on_demand']
+        && (!('warrantyMonths' in data) || data.warrantyMonths == null || (data.warrantyMonths is int && data.warrantyMonths >= 0 && data.warrantyMonths <= 120))
+        && data.createdAt is timestamp && data.createdAt == request.time
+        && data.updatedAt is timestamp && data.updatedAt == request.time
+        && isCurrentActiveStoreOwner(data.storeId)
+        && exists(/databases/$(database)/documents/products/$(data.productId));
+    }
+
+    // =========================================================================
+    // PRODUCT SUBMISSIONS: /productSubmissions/{submissionId}
+    // =========================================================================
+    match /productSubmissions/{submissionId} {
+      allow get: if isAdmin()
+                 || (isAuthenticated() && (resource.data.merchantUid == request.auth.uid || isCurrentStoreOwner(resource.data.storeId)));
+
+      allow list: if isAdmin()
+                  || (
+                    isAuthenticated()
+                    && ('limit' in request.query)
+                    && request.query.limit > 0
+                    && request.query.limit <= 25
+                    && resource.data.merchantUid == request.auth.uid
+                  );
+
+      allow create: if isAuthenticated()
+                    && isEmailVerified()
+                    && isValidMerchantProductSubmissionCreate(request.resource.data);
+
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // =========================================================================
+    // OFFER SUBMISSIONS: /offerSubmissions/{submissionId}
+    // =========================================================================
+    match /offerSubmissions/{submissionId} {
+      allow get: if isAdmin()
+                 || (isAuthenticated() && (resource.data.merchantUid == request.auth.uid || isCurrentStoreOwner(resource.data.storeId)));
+
+      allow list: if isAdmin()
+                  || (
+                    isAuthenticated()
+                    && ('limit' in request.query)
+                    && request.query.limit > 0
+                    && request.query.limit <= 25
+                    && resource.data.merchantUid == request.auth.uid
+                  );
+
+      allow create: if isAuthenticated()
+                    && isEmailVerified()
+                    && isValidMerchantOfferSubmissionCreate(request.resource.data);
+
+      allow update: if isAdmin();
+      allow delete: if false;
     }
 
     // =========================================================================

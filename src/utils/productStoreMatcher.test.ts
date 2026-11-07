@@ -246,5 +246,150 @@ describe('productStoreMatcher - Store & Product Matching Logic', () => {
       expect(sorted[1].id).toBe('store_2'); // 0.8 km
       expect(sorted[2].id).toBe('store_3_no_coords'); // undefined distance -> last
     });
+
+    it('excludes superseded, archived, or pending offers from store matching', () => {
+      const supersededOffer: InventoryOffer = {
+        id: 'off_super',
+        storeId: 'store_1',
+        productId: 'prod_phone_12',
+        price: 1999999, // Lower price but superseded!
+        currency: 'UZS',
+        availability: 'in_stock',
+        isSuperseded: true,
+        updatedAt: '2026-11-01',
+      };
+      const archivedOffer: InventoryOffer = {
+        id: 'off_arch',
+        storeId: 'store_2',
+        productId: 'prod_phone_12',
+        price: 1500000,
+        currency: 'UZS',
+        availability: 'in_stock',
+        status: 'archived',
+        updatedAt: '2026-11-01',
+      };
+
+      const result = matchStoresWithProductOffers(mockStores, [supersededOffer, archivedOffer], mockProduct);
+      expect(result).toHaveLength(0);
+    });
+
+    it('excludes archived and unverified pending merchant stores from customer matches', () => {
+      const pendingStore: Store = {
+        id: 'store_pending_unverified',
+        name: 'Pending Store',
+        city: 'Nukus',
+        address: 'Markaz',
+        coordinates: nukusCenter,
+        category: 'electronics',
+        phone: '',
+        openingHours: '',
+        status: 'pending',
+        isVerified: false,
+        isDemo: false,
+        createdAt: '',
+        updatedAt: '',
+      };
+      const validOffer: InventoryOffer = {
+        id: 'off_valid',
+        storeId: 'store_pending_unverified',
+        productId: 'prod_phone_12',
+        price: 2000000,
+        currency: 'UZS',
+        availability: 'in_stock',
+        status: 'active',
+        updatedAt: '',
+      };
+
+      const result = matchStoresWithProductOffers([pendingStore], [validOffer], mockProduct);
+      expect(result).toHaveLength(0);
+    });
+
+    it('includes admin-created unclaimed stores in customer matches', () => {
+      const adminStore: Store = {
+        id: 'store_admin_unclaimed',
+        name: 'Admin Created Store',
+        city: 'Nukus',
+        address: 'Bozor 5',
+        coordinates: nukusCenter,
+        category: 'electronics',
+        phone: '',
+        openingHours: '',
+        status: 'active',
+        isVerified: true,
+        ownershipStatus: 'unclaimed',
+        isDemo: false,
+        createdAt: '',
+        updatedAt: '',
+      };
+      const validOffer: InventoryOffer = {
+        id: 'off_admin_prod',
+        storeId: 'store_admin_unclaimed',
+        productId: 'prod_phone_12',
+        price: 2100000,
+        currency: 'UZS',
+        availability: 'in_stock',
+        status: 'active',
+        updatedAt: '',
+      };
+
+      const result = matchStoresWithProductOffers([adminStore], [validOffer], mockProduct);
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('store_admin_unclaimed');
+      expect(result[0].matchedOffer?.price).toBe(2100000);
+    });
+
+    it('excludes deactivated (archived) and inactive stores from product matches', () => {
+      const archivedStore: Store = {
+        id: 'store_archived',
+        name: 'Deactivated Store',
+        city: 'Nukus',
+        address: 'Markaz',
+        coordinates: nukusCenter,
+        category: 'electronics',
+        phone: '',
+        openingHours: '',
+        status: 'archived',
+        isVerified: true,
+        createdAt: '',
+        updatedAt: '',
+      };
+      const inactiveStore: Store = {
+        id: 'store_inactive',
+        name: 'Inactive Store',
+        city: 'Nukus',
+        address: 'Bozor',
+        coordinates: nukusCenter,
+        category: 'electronics',
+        phone: '',
+        openingHours: '',
+        status: 'inactive',
+        isVerified: true,
+        createdAt: '',
+        updatedAt: '',
+      };
+      const validOffer1: InventoryOffer = {
+        id: 'off_arch',
+        storeId: 'store_archived',
+        productId: 'prod_phone_12',
+        price: 2000000,
+        currency: 'UZS',
+        availability: 'in_stock',
+        status: 'active',
+        updatedAt: '',
+      };
+      const validOffer2: InventoryOffer = {
+        id: 'off_inact',
+        storeId: 'store_inactive',
+        productId: 'prod_phone_12',
+        price: 2000000,
+        currency: 'UZS',
+        availability: 'in_stock',
+        status: 'active',
+        updatedAt: '',
+      };
+
+      const result = matchStoresWithProductOffers([archivedStore, inactiveStore], [validOffer1, validOffer2], mockProduct);
+      expect(result).toHaveLength(0);
+    });
   });
 });

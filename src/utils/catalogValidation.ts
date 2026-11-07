@@ -86,6 +86,17 @@ export function validateCoordinates(coords?: Coordinates | null): ValidationResu
 }
 
 /**
+ * Validates whether a URL has a safe http:// or https:// scheme.
+ * Prevents javascript:, data:, and other dangerous protocol injection.
+ */
+export function isValidHttpUrl(url?: string | null): boolean {
+  if (!url || typeof url !== 'string') return false;
+  const trimmed = url.trim();
+  if (trimmed.length === 0 || trimmed.length > 200) return false;
+  return /^https?:\/\/.+/i.test(trimmed);
+}
+
+/**
  * Validates input for creating a Store in Nukus marketplace
  */
 export function validateStoreInput(
@@ -136,6 +147,19 @@ export function validateStoreInput(
     }
   } else if (!options?.allowOptionalContact) {
     return { isValid: false, error: 'Ish tartibi va soatlari kiritilishi shart (masalan: 09:00 - 20:00).' };
+  }
+
+  if (input.website !== undefined && input.website !== null && input.website.trim() !== '') {
+    const websiteTrimmed = input.website.trim();
+    if (websiteTrimmed.length > 200) {
+      return { isValid: false, error: 'Do‘kon veb-sayti manzili 200 ta belgidan oshmasligi kerak.' };
+    }
+    if (!isValidHttpUrl(websiteTrimmed)) {
+      return {
+        isValid: false,
+        error: 'Do‘kon veb-sayti manzili faqat http:// yoki https:// bilan boshlanishi kerak (xavfsiz URL).',
+      };
+    }
   }
 
   const coordsCheck = validateCoordinates(input.coordinates);
@@ -205,9 +229,9 @@ export function validateOfferInput(input?: Partial<CreateOfferInput> | null): Va
     return { isValid: false, error: 'Mahsulot narxi to‘g‘ri raqam bilan ko‘rsatilishi shart.' };
   }
 
-  // Strict constraint: Disallow negative prices
-  if (input.price < 0) {
-    return { isValid: false, error: 'Mahsulot narxi manfiy bo‘lishi mumkin emas.' };
+  // Strict constraint: Disallow negative or zero prices (must be > 0)
+  if (input.price <= 0) {
+    return { isValid: false, error: 'Mahsulot narxi 0 dan katta bo‘lishi shart (manfiy yoki nol bo‘lishi mumkin emas).' };
   }
 
   if (input.currency && !['UZS', 'USD'].includes(input.currency)) {
@@ -245,8 +269,8 @@ export function validateUpdateOfferInput(input?: Partial<UpdateOfferInput> | nul
     if (typeof input.price !== 'number' || !Number.isFinite(input.price)) {
       return { isValid: false, error: 'Mahsulot narxi to‘g‘ri raqam bilan ko‘rsatilishi shart.' };
     }
-    if (input.price < 0) {
-      return { isValid: false, error: 'Mahsulot narxi manfiy bo‘lishi mumkin emas.' };
+    if (input.price <= 0) {
+      return { isValid: false, error: 'Mahsulot narxi 0 dan katta bo‘lishi shart (manfiy yoki nol bo‘lishi mumkin emas).' };
     }
   }
 
@@ -357,8 +381,8 @@ export function validateProductSubmissionInput(
     if (typeof input.proposedPrice !== 'number' || !Number.isFinite(input.proposedPrice)) {
       return { isValid: false, error: 'Taklif etilgan narx to‘g‘ri raqam bo‘lishi shart.' };
     }
-    if (input.proposedPrice < 0) {
-      return { isValid: false, error: 'Taklif etilgan narx manfiy bo‘lishi mumkin emas.' };
+    if (input.proposedPrice <= 0) {
+      return { isValid: false, error: 'Taklif etilgan narx 0 dan katta bo‘lishi shart (manfiy yoki nol bo‘lishi mumkin emas).' };
     }
   }
 

@@ -26,6 +26,7 @@ export interface InventoryOffer {
   storeId: string;
   ownerId?: string; // Firebase Auth UID of store owner (absent on demo fixtures)
   productId: string;
+  variantId?: string; // Optional variant identifier (e.g. 'black-128gb')
   price: number; // Non-negative amount (price >= 0)
   currency: CurrencyCode;
   availability: OfferAvailability;
@@ -33,6 +34,10 @@ export interface InventoryOffer {
   warrantyMonths?: number;
   deliveryAvailable?: boolean;
   notes?: string;
+  version?: number; // Monotonically increasing version counter (legacy offers default to 1)
+  status?: 'active' | 'archived' | 'pending' | 'superseded'; // Lifecycle status of offer
+  isSuperseded?: boolean; // Flag marking superseded offer version
+  legacyId?: string; // Reference to original legacy document ID when deduplicated/migrated
   isDemo?: boolean; // Clearly marks test/demo fixtures
   createdAt?: string;
   updatedAt: string;
@@ -113,6 +118,7 @@ export interface UpdateProductInput {
 export interface CreateOfferInput {
   storeId: string;
   productId: string;
+  variantId?: string;
   ownerId?: string; // Automatically bound from authenticated user UID
   price: number;
   currency?: CurrencyCode;
@@ -120,6 +126,9 @@ export interface CreateOfferInput {
   warrantyMonths?: number;
   deliveryAvailable?: boolean;
   notes?: string;
+  status?: 'active' | 'archived' | 'pending' | 'superseded';
+  isSuperseded?: boolean;
+  version?: number;
 }
 
 /**
@@ -133,4 +142,8 @@ export interface UpdateOfferInput {
   warrantyMonths?: number;
   deliveryAvailable?: boolean;
   notes?: string;
+  variantId?: string;
+  status?: 'active' | 'archived' | 'pending' | 'superseded';
+  isSuperseded?: boolean;
+  version?: number;
 }

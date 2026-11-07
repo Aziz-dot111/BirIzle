@@ -11,7 +11,7 @@ export interface Coordinates {
  */
 export type PlaceSourceType = 'birqidir' | 'openstreetmap';
 
-export type StoreStatus = 'active' | 'pending' | 'archived';
+export type StoreStatus = 'active' | 'pending' | 'archived' | 'inactive' | 'suspended';
 export type StoreOperationalStatus = 'active' | 'suspended' | 'archived';
 export type StoreOwnershipStatus = 'unclaimed' | 'claimed' | 'verified';
 

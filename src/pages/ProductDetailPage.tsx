@@ -23,6 +23,7 @@ import {
   Info,
   SlidersHorizontal,
   Layers,
+  ShoppingBag,
 } from 'lucide-react';
 import type { ProductItem, StoreProductOffer, Coordinates, Store } from '@/types';
 import {
@@ -36,6 +37,7 @@ import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { LocationControl } from '@/components/common/LocationControl';
 import { NearbyStoresMap } from '@/components/map/NearbyStoresMap';
+import { CustomerOrderModal } from '@/components/order/CustomerOrderModal';
 import { useFavorites } from '@/hooks/useFavorites';
 import './ProductDetailPage.css';
 
@@ -58,6 +60,7 @@ export const ProductDetailPage: React.FC = () => {
   const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
   const [copiedShare, setCopiedShare] = useState(false);
   const [selectedStoreModal, setSelectedStoreModal] = useState<StoreProductOffer | null>(null);
+  const [selectedOrderOffer, setSelectedOrderOffer] = useState<StoreProductOffer | null>(null);
 
   const lang = getSavedMapLanguage();
   const {
@@ -803,16 +806,23 @@ export const ProductDetailPage: React.FC = () => {
                         {/* Store info */}
                         <div className="bq-offer-card__store-section">
                           <div className="bq-offer-card__store-header">
-                            <button
-                              type="button"
-                              className="bq-offer-card__store-name-btn"
-                              onClick={() => setSelectedStoreModal(offer)}
-                              title={lang === 'ru' ? 'Подробнее о магазине' : 'Do‘kon haqida to‘liq ma’lumot'}
+                            <Link
+                              to={`/store/${offer.storeId}`}
+                              className="bq-offer-card__store-name-link"
+                              title={lang === 'ru' ? 'Перейти на страницу магазина' : 'Do‘kon sahifasiga o‘tish'}
                             >
                               <h4 className="bq-offer-card__store-name">{offer.storeName}</h4>
+                            </Link>
+                            <button
+                              type="button"
+                              className="bq-offer-card__store-info-btn"
+                              onClick={() => setSelectedStoreModal(offer)}
+                              title={lang === 'ru' ? 'Подробнее о магазине' : 'Do‘kon haqida ma’lumot'}
+                              aria-label="Do‘kon ma’lumotini ko‘rish"
+                            >
                               <Info size={14} className="text-slate-400 bq-store-info-icon" />
                             </button>
-                            {offer.isStoreVerified && (
+                            {offer.isStoreVerified && !offer.isDemo && (
                               <span className="bq-offer-badge bq-offer-badge--verified" title="Tekshirilgan do‘kon">
                                 <ShieldCheck size={12} />
                                 <span>{lang === 'ru' ? 'Проверен' : 'Tekshirilgan'}</span>
@@ -883,6 +893,16 @@ export const ProductDetailPage: React.FC = () => {
                           </div>
 
                           <div className="bq-offer-card__actions">
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              leftIcon={<ShoppingBag size={14} />}
+                              onClick={() => setSelectedOrderOffer(offer)}
+                              title={lang === 'ru' ? 'Отправить запрос в магазин' : 'Do‘konga so‘rov yuborish'}
+                            >
+                              {lang === 'ru' ? 'Заказать' : 'So‘rov yuborish'}
+                            </Button>
+
                             {offer.storePhone && (
                               <a
                                 href={`tel:${offer.storePhone}`}
@@ -965,7 +985,7 @@ export const ProductDetailPage: React.FC = () => {
                     {selectedStoreModal.storeName}
                   </h3>
                   <div className="bq-store-modal__badges">
-                    {selectedStoreModal.isStoreVerified && (
+                    {selectedStoreModal.isStoreVerified && !selectedStoreModal.isDemo && (
                       <span className="bq-offer-badge bq-offer-badge--verified">
                         <ShieldCheck size={12} /> {lang === 'ru' ? 'Проверенный партнер' : 'Rasmiy tekshirilgan do‘kon'}
                       </span>
@@ -1014,6 +1034,13 @@ export const ProductDetailPage: React.FC = () => {
               </div>
 
               <div className="bq-store-modal__actions">
+                <Link
+                  to={`/store/${selectedStoreModal.storeId}`}
+                  className="bq-store-modal__store-page-btn"
+                >
+                  <StoreIcon size={16} />
+                  <span>{lang === 'ru' ? 'Страница магазина' : 'Do‘kon sahifasi'}</span>
+                </Link>
                 {selectedStoreModal.storePhone && (
                   <a
                     href={`tel:${selectedStoreModal.storePhone}`}
@@ -1076,6 +1103,14 @@ export const ProductDetailPage: React.FC = () => {
             </div>
           </section>
         )}
+        {/* Customer Order / Lead Modal */}
+        <CustomerOrderModal
+          isOpen={selectedOrderOffer !== null}
+          product={product}
+          offer={selectedOrderOffer}
+          lang={lang}
+          onClose={() => setSelectedOrderOffer(null)}
+        />
       </div>
     </div>
   );

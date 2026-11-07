@@ -14,12 +14,14 @@ import {
   Navigation,
   Map as MapIcon,
   List as ListIcon,
+  ShoppingBag,
 } from 'lucide-react';
 import type { ProductItem, StoreProductOffer, Coordinates, Store } from '@/types';
 import { getStoreProductOffers } from '@/services/firebase/catalog';
 import { formatDistance, isValidCoordinates } from '@/utils/geo';
 import { Button } from '@/components/common/Button';
 import { NearbyStoresMap } from '@/components/map/NearbyStoresMap';
+import { CustomerOrderModal } from '@/components/order/CustomerOrderModal';
 import './ProductOffersModal.css';
 
 interface ProductOffersModalProps {
@@ -39,6 +41,7 @@ export const ProductOffersModal: React.FC<ProductOffersModalProps> = ({
   const [modalSort, setModalSort] = useState<'price_asc' | 'price_desc' | 'distance'>('price_asc');
   const [onlyInStock, setOnlyInStock] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const [selectedOrderOffer, setSelectedOrderOffer] = useState<StoreProductOffer | null>(null);
 
   useEffect(() => {
     if (!product) return;
@@ -380,7 +383,7 @@ export const ProductOffersModal: React.FC<ProductOffersModalProps> = ({
                       <div className="bq-offer-store-name-row">
                         <StoreIcon size={16} className="text-emerald" />
                         <span className="bq-offer-store-name">{offer.storeName}</span>
-                        {offer.isStoreVerified && (
+                        {offer.isStoreVerified && !offer.isDemo && (
                           <span className="bq-offer-badge-verified">
                             <CheckCircle2 size={11} /> Tasdiqlangan do‘kon
                           </span>
@@ -453,6 +456,16 @@ export const ProductOffersModal: React.FC<ProductOffersModalProps> = ({
                           ? 'Omborda yo‘q'
                           : 'Talab bo‘yicha'}
                       </span>
+                      <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        leftIcon={<ShoppingBag size={13} />}
+                        onClick={() => setSelectedOrderOffer(offer)}
+                        style={{ marginTop: '0.45rem', width: '100%' }}
+                      >
+                        So‘rov yuborish
+                      </Button>
                     </div>
                   </div>
                 );
@@ -460,6 +473,14 @@ export const ProductOffersModal: React.FC<ProductOffersModalProps> = ({
             </div>
           )}
         </div>
+
+        {/* Customer Order / Lead Modal */}
+        <CustomerOrderModal
+          isOpen={selectedOrderOffer !== null}
+          product={product}
+          offer={selectedOrderOffer}
+          onClose={() => setSelectedOrderOffer(null)}
+        />
       </div>
     </div>
   );

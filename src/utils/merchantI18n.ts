@@ -71,6 +71,65 @@ export interface MerchantTexts {
   deliveryLabel: string;
   availableDelivery: string;
   noDelivery: string;
+
+  // Tabs
+  activeOffersTab: string;
+  submissionsTab: string;
+
+  // Modal & Offer Submission
+  selectExistingTab: string;
+  suggestNewTab: string;
+  modalTitle: string;
+  inactiveStoreWarning: string;
+  searchCatalogPlaceholder: string;
+  selectedProduct: string;
+  changeProduct: string;
+  noProductsFound: string;
+  variantLabel: string;
+  selectVariantPlaceholder: string;
+  priceUzsLabel: string;
+  pricePlaceholder: string;
+  warrantyMonthsLabel: string;
+  warrantyPlaceholder: string;
+  deliveryCheckboxLabel: string;
+  notesLabel: string;
+  notesPlaceholder: string;
+  cancelBtn: string;
+  sendOfferSubmissionBtn: string;
+  sendingBtn: string;
+  offerSubmittedSuccess: string;
+  duplicatePendingError: string;
+
+  // New Product Submission
+  newProdNameLabel: string;
+  newProdNamePlaceholder: string;
+  newProdCategoryLabel: string;
+  selectCategoryPrompt: string;
+  newProdBrandLabel: string;
+  newProdBrandPlaceholder: string;
+  newProdModelLabel: string;
+  newProdModelPlaceholder: string;
+  newProdBarcodeLabel: string;
+  newProdBarcodePlaceholder: string;
+  newProdImageLabel: string;
+  newProdImagePlaceholder: string;
+  newProdDescLabel: string;
+  newProdDescPlaceholder: string;
+  newProdProposedPriceLabel: string;
+  sendProductSubmissionBtn: string;
+  productSubmittedSuccess: string;
+
+  // Submissions History View
+  noSubmissionsTitle: string;
+  noSubmissionsDesc: string;
+  offerSubmissionBadge: string;
+  productSubmissionBadge: string;
+  statusPending: string;
+  statusApproved: string;
+  statusRejected: string;
+  adminNoteLabel: string;
+  resubmitBtn: string;
+  dateLabel: string;
 }
 
 export const MERCHANT_TRANSLATIONS: Record<MapLanguage, MerchantTexts> = {
@@ -149,6 +208,66 @@ export const MERCHANT_TRANSLATIONS: Record<MapLanguage, MerchantTexts> = {
     deliveryLabel: 'Yetkazib berish',
     availableDelivery: 'Mavjud',
     noDelivery: 'Yo‘q',
+
+    activeOffersTab: 'Faol takliflar',
+    submissionsTab: 'Arizalar tarixi',
+
+    selectExistingTab: 'Mavjud mahsulot',
+    suggestNewTab: 'Katalogda yo‘q yangi mahsulot',
+    modalTitle: 'Mahsulot biriktirish va narx belgilash',
+    inactiveStoreWarning:
+      'Ushbu do‘kon faol emas yoki tasdiqlanmagan. Taklif va mahsulot yuborish faqat faol do‘konlar uchun ruxsat etiladi.',
+    searchCatalogPlaceholder: 'Katalogdan mahsulot nomi yoki brend bo‘yicha qidiring...',
+    selectedProduct: 'Tanlangan mahsulot',
+    changeProduct: 'O‘zgartirish',
+    noProductsFound:
+      'Mos mahsulot topilmadi. Agar u katalogda yo‘q bo‘lsa, yangi mahsulot arizasini yuborishingiz mumkin.',
+    variantLabel: 'Mahsulot varianti (ixtiyoriy)',
+    selectVariantPlaceholder: 'Asosiy variant (baza)',
+    priceUzsLabel: 'Sotuv narxi (UZS)',
+    pricePlaceholder: 'Masalan: 2 500 000',
+    warrantyMonthsLabel: 'Kafolat muddati (oy)',
+    warrantyPlaceholder: 'Masalan: 12 (0 - 120 oy)',
+    deliveryCheckboxLabel: 'Xaridorga yetkazib berish xizmati mavjud',
+    notesLabel: 'Do‘kon eslatmasi / qo‘shimcha ma’lumot (ixtiyoriy)',
+    notesPlaceholder: 'Masalan: Yangi, qadoqda, yetkazib berish 2 soat ichida',
+    cancelBtn: 'Bekor qilish',
+    sendOfferSubmissionBtn: 'Moderatsiyaga yuborish',
+    sendingBtn: 'Yuborilmoqda...',
+    offerSubmittedSuccess:
+      'Mahsulot narxi arizasi muvaffaqiyatli moderator tekshiruviga yuborildi. Tasdiqlangach xaridorlarga ko‘rinadi.',
+    duplicatePendingError: 'Ushbu mahsulot uchun arizangiz allaqachon moderator tekshiruvida turibdi.',
+
+    newProdNameLabel: 'Mahsulot nomi',
+    newProdNamePlaceholder: 'Masalan: Samsung Galaxy A55 128GB',
+    newProdCategoryLabel: 'Toifa / Kategoriya',
+    selectCategoryPrompt: 'Toifani tanlang',
+    newProdBrandLabel: 'Brend (ixtiyoriy)',
+    newProdBrandPlaceholder: 'Masalan: Samsung, Apple, Artel',
+    newProdModelLabel: 'Model (ixtiyoriy)',
+    newProdModelPlaceholder: 'Masalan: SM-A556B',
+    newProdBarcodeLabel: 'Shtrixkod (ixtiyoriy, 8-14 raqam)',
+    newProdBarcodePlaceholder: 'Masalan: 8806091234567',
+    newProdImageLabel: 'Rasm havolasi (URL, ixtiyoriy)',
+    newProdImagePlaceholder: 'https://example.com/image.jpg',
+    newProdDescLabel: 'Mahsulot haqida tavsif (ixtiyoriy)',
+    newProdDescPlaceholder: 'Texnik xususiyatlari, ranglari va to‘plami haqida qisqacha yozing...',
+    newProdProposedPriceLabel: 'Kutilayotgan sotuv narxi (UZS, ixtiyoriy)',
+    sendProductSubmissionBtn: 'Yangi mahsulotni tasdiqlashga yuborish',
+    productSubmittedSuccess:
+      'Yangi mahsulot taklifi moderatorlarga yuborildi. Katalogga qo‘shilgach, do‘koningizga narx biriktirishingiz mumkin.',
+
+    noSubmissionsTitle: 'Hozircha arizalar mavjud emas',
+    noSubmissionsDesc:
+      'Ushbu do‘kon uchun yuborilgan barcha narx takliflari va yangi mahsulot arizalari shu yerda ko‘rinadi.',
+    offerSubmissionBadge: 'Narx taklifi',
+    productSubmissionBadge: 'Yangi mahsulot',
+    statusPending: 'Kutilmoqda',
+    statusApproved: 'Tasdiqlandi',
+    statusRejected: 'Rad etildi',
+    adminNoteLabel: 'Moderator izohi:',
+    resubmitBtn: 'Qayta yuborish',
+    dateLabel: 'Sana',
   },
   ru: {
     dashboardTitle: 'Кабинет владельца магазина',
@@ -225,6 +344,66 @@ export const MERCHANT_TRANSLATIONS: Record<MapLanguage, MerchantTexts> = {
     deliveryLabel: 'Доставка',
     availableDelivery: 'Есть',
     noDelivery: 'Нет',
+
+    activeOffersTab: 'Активные предложения',
+    submissionsTab: 'История заявок',
+
+    selectExistingTab: 'Выбрать из каталога',
+    suggestNewTab: 'Предложить новый товар',
+    modalTitle: 'Привязка товара и установка цены',
+    inactiveStoreWarning:
+      'Этот магазин неактивен или не подтвержден. Добавление товаров доступно только для активных магазинов.',
+    searchCatalogPlaceholder: 'Поиск товара по названию или бренду в каталоге...',
+    selectedProduct: 'Выбранный товар',
+    changeProduct: 'Изменить',
+    noProductsFound:
+      'Товар не найден. Если его нет в каталоге, вы можете предложить новый товар через соседнюю вкладку.',
+    variantLabel: 'Вариант товара (необязательно)',
+    selectVariantPlaceholder: 'Основной вариант (базовый)',
+    priceUzsLabel: 'Цена продажи (UZS)',
+    pricePlaceholder: 'Например: 2 500 000',
+    warrantyMonthsLabel: 'Гарантия (в месяцах)',
+    warrantyPlaceholder: 'Например: 12 (от 0 до 120)',
+    deliveryCheckboxLabel: 'Доступна доставка покупателю',
+    notesLabel: 'Примечание к товару (необязательно)',
+    notesPlaceholder: 'Например: Новый, в заводской упаковке, доставка за 2 часа',
+    cancelBtn: 'Отмена',
+    sendOfferSubmissionBtn: 'Отправить на модерацию',
+    sendingBtn: 'Отправка...',
+    offerSubmittedSuccess:
+      'Ценовое предложение отправлено на модерацию. После утверждения оно появится в поиске для покупателей.',
+    duplicatePendingError: 'Заявка по этому товару уже находится на модерации.',
+
+    newProdNameLabel: 'Название товара',
+    newProdNamePlaceholder: 'Например: Samsung Galaxy A55 128GB',
+    newProdCategoryLabel: 'Категория',
+    selectCategoryPrompt: 'Выберите категорию',
+    newProdBrandLabel: 'Бренд (необязательно)',
+    newProdBrandPlaceholder: 'Например: Samsung, Apple, Artel',
+    newProdModelLabel: 'Модель (необязательно)',
+    newProdModelPlaceholder: 'Например: SM-A556B',
+    newProdBarcodeLabel: 'Штрихкод (необязательно, 8-14 цифр)',
+    newProdBarcodePlaceholder: 'Например: 8806091234567',
+    newProdImageLabel: 'Ссылка на изображение (URL, необязательно)',
+    newProdImagePlaceholder: 'https://example.com/image.jpg',
+    newProdDescLabel: 'Описание товара (необязательно)',
+    newProdDescPlaceholder: 'Кратко опишите характеристики, цвета и комплектацию...',
+    newProdProposedPriceLabel: 'Ориентировочная цена (UZS, необязательно)',
+    sendProductSubmissionBtn: 'Отправить товар на утверждение',
+    productSubmittedSuccess:
+      'Предложение товара отправлено модераторам. После добавления в каталог вы сможете установить цену.',
+
+    noSubmissionsTitle: 'Заявок пока нет',
+    noSubmissionsDesc:
+      'Здесь будут отображаться все заявки на добавление цен и новых товаров для этого магазина.',
+    offerSubmissionBadge: 'Ценовое предложение',
+    productSubmissionBadge: 'Новый товар',
+    statusPending: 'Ожидает проверки',
+    statusApproved: 'Одобрено',
+    statusRejected: 'Отклонено',
+    adminNoteLabel: 'Комментарий модератора:',
+    resubmitBtn: 'Отправить повторно',
+    dateLabel: 'Дата',
   },
 };
 

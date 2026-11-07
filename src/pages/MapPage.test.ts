@@ -120,5 +120,65 @@ describe('MapPage & Dedicated Map Section Logic', () => {
     expect(isValidCoordinates(userCoords)).toBe(true);
     expect(mockStores.length).toBeGreaterThan(0);
   });
+
+  describe('Phase 4: Map Integration & Marker Invariants', () => {
+    it('deduplicates stores by ID so a store never produces duplicate markers', () => {
+      const storesWithDuplicates: Store[] = [
+        mockStores[0],
+        { ...mockStores[0] }, // Exact duplicate store
+        mockStores[1],
+      ];
+
+      const uniqueStoresMap = new Map<string, Store>();
+      storesWithDuplicates.forEach((s) => {
+        if (s && s.id && !uniqueStoresMap.has(s.id)) {
+          uniqueStoresMap.set(s.id, s);
+        }
+      });
+      const uniqueStores = Array.from(uniqueStoresMap.values());
+
+      expect(uniqueStores.length).toBe(2);
+      expect(uniqueStores[0].id).toBe('store_nukus_center');
+      expect(uniqueStores[1].id).toBe('store_osm_kungrad');
+    });
+
+    it('filters out invalid or missing coordinates before marker generation', () => {
+      const mixedStores: Store[] = [
+        mockStores[0],
+        {
+          ...mockStores[0],
+          id: 'store_invalid_coords_1',
+          coordinates: { lat: 0, lng: 0 },
+        },
+        {
+          ...mockStores[0],
+          id: 'store_invalid_coords_2',
+          coordinates: { lat: 999, lng: 999 },
+        },
+        {
+          ...mockStores[0],
+          id: 'store_invalid_coords_3',
+          coordinates: { lat: NaN, lng: 59.6 },
+        },
+      ];
+
+      const validStores = mixedStores.filter((s) => isValidCoordinates(s.coordinates));
+      expect(validStores.length).toBe(1);
+      expect(validStores[0].id).toBe('store_nukus_center');
+    });
+
+    it('generates consistent store page link destination', () => {
+      const storeId = 'store_nukus_center';
+      const storeUrl = `/store/${encodeURIComponent(storeId)}`;
+      expect(storeUrl).toBe('/store/store_nukus_center');
+    });
+
+    it('handles special characters in store IDs when generating store URLs', () => {
+      const storeId = 'store/central#1';
+      const storeUrl = `/store/${encodeURIComponent(storeId)}`;
+      expect(storeUrl).toBe('/store/store%2Fcentral%231');
+      expect(decodeURIComponent(storeUrl.replace('/store/', ''))).toBe(storeId);
+    });
+  });
 });
 

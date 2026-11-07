@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import {
   MapPin,
   Store as StoreIcon,
@@ -19,6 +20,7 @@ import {
   Tag,
   Package,
   Heart,
+  X,
 } from 'lucide-react';
 import { useFavorites } from '@/hooks/useFavorites';
 import { Button } from '@/components/common/Button';
@@ -43,6 +45,7 @@ import {
 } from '@/utils/productStoreMatcher';
 import { KARAKALPAKSTAN_DISTRICTS } from '@/utils/karakalpakstanDistricts';
 import { normalizeSearchQuery } from '@/utils/textNormalization';
+import { isValidHttpUrl } from '@/utils/catalogValidation';
 import {
   type MapLanguage,
   getMapTexts,
@@ -321,6 +324,11 @@ export const NearbyStoresSection: React.FC<NearbyStoresSectionProps> = ({
     sortBy,
     lang,
   ]);
+
+  const selectedStore = useMemo(() => {
+    if (!selectedStoreId) return null;
+    return displayedStores.find((s) => s.id === selectedStoreId) || null;
+  }, [selectedStoreId, displayedStores]);
 
   const handleSelectStore = (store: Store) => {
     setSelectedStoreId(store.id);
@@ -656,6 +664,143 @@ export const NearbyStoresSection: React.FC<NearbyStoresSectionProps> = ({
                   defaultCenter={CITY_CENTROIDS.Nukus}
                   lang={lang}
                 />
+
+                {/* Mobile & Desktop Bottom Sheet / Quick Store Details */}
+                {selectedStore && (
+                  <div className="bq-map-store-sheet animate-slide-up">
+                    <div className="bq-map-store-sheet__header">
+                      <div className="bq-map-store-sheet__title-row">
+                        <Link
+                          to={`/store/${selectedStore.id}`}
+                          className="bq-map-store-sheet__name-link"
+                          title={lang === 'ru' ? 'Страница магазина' : 'Do‘kon sahifasi'}
+                        >
+                          <h4 className="bq-map-store-sheet__name">
+                            {getSafeStoreName(selectedStore.name, lang)}
+                          </h4>
+                        </Link>
+                        <button
+                          type="button"
+                          className="bq-map-store-sheet__close"
+                          onClick={() => setSelectedStoreId(null)}
+                          aria-label="Yopish"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+
+                      <div className="bq-map-store-sheet__badges">
+                        {selectedStore.isVerified && (
+                          <span className="bq-store-card__verified" title={t.verifiedPartnerTitle}>
+                            <ShieldCheck size={12} />
+                            <span>{t.verifiedPartner}</span>
+                          </span>
+                        )}
+                        <span className="bq-store-card__category">
+                          {translateCategory(selectedStore.category, lang)}
+                        </span>
+                        {selectedStore.distanceKm !== undefined && (
+                          <span className="bq-map-store-sheet__distance">
+                            📍 {formatDistance(selectedStore.distanceKm, lang)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {selectedStore.matchedOffer && (
+                      <div className="bq-map-store-sheet__offer">
+                        <div className="bq-map-store-sheet__offer-name">
+                          📦 {selectedStore.matchedOffer.productName}
+                        </div>
+                        <div className="bq-map-store-sheet__offer-price">
+                          <strong>
+                            {selectedStore.matchedOffer.price > 0
+                              ? `${selectedStore.matchedOffer.price.toLocaleString('uz-UZ')} ${selectedStore.matchedOffer.currency}`
+                              : ''}
+                          </strong>
+                          {selectedStore.isCheapest && (
+                            <span className="bq-map-popup-badge-cheapest">
+                              🏆 {t.cheapestOfferBadge}
+                            </span>
+                          )}
+                          {selectedStore.isClosest && (
+                            <span className="bq-map-popup-badge-closest">
+                              📍 {t.closestStoreBadge}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="bq-map-store-sheet__meta">
+                      <div className="bq-map-store-sheet__meta-item">
+                        <MapPin size={13} className="text-slate-400" />
+                        <span>
+                          {selectedStore.district ? `${selectedStore.district}, ` : ''}
+                          {selectedStore.city}, {selectedStore.address}
+                        </span>
+                      </div>
+                      {selectedStore.phone && (
+                        <div className="bq-map-store-sheet__meta-item">
+                          <Phone size={13} className="text-slate-400" />
+                          <a href={`tel:${selectedStore.phone}`}>{selectedStore.phone}</a>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="bq-map-store-sheet__actions">
+                      <Link
+                        to={`/store/${selectedStore.id}`}
+                        className="bq-map-store-sheet__btn bq-map-store-sheet__btn--primary"
+                      >
+                        <StoreIcon size={14} />
+                        <span>{lang === 'ru' ? 'Страница магазина' : 'Do‘kon sahifasi'}</span>
+                      </Link>
+
+                      {buildDirectionsUrl(selectedStore.coordinates, userCoords) && (
+                        <a
+                          href={buildDirectionsUrl(selectedStore.coordinates, userCoords)!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="bq-map-store-sheet__btn bq-map-store-sheet__btn--outline"
+                        >
+                          <Navigation size={14} />
+                          <span>{t.getDirections}</span>
+                        </a>
+                      )}
+
+                      <button
+                        type="button"
+                        className={`bq-map-store-sheet__fav-btn ${
+                          isStoreFavorite(selectedStore.id)
+                            ? 'bq-map-store-sheet__fav-btn--active'
+                            : ''
+                        }`}
+                        onClick={() =>
+                          toggleStoreFavorite({
+                            id: selectedStore.id,
+                            name: selectedStore.name,
+                            city: selectedStore.city,
+                            address: selectedStore.address,
+                            category: selectedStore.category,
+                            phone: selectedStore.phone,
+                          })
+                        }
+                        title={
+                          isStoreFavorite(selectedStore.id)
+                            ? 'Saqlanganlardan o‘chirish'
+                            : 'Do‘konni saqlash'
+                        }
+                        aria-label="Saqlash"
+                      >
+                        <Heart
+                          size={16}
+                          fill={isStoreFavorite(selectedStore.id) ? 'currentColor' : 'none'}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -723,7 +868,14 @@ export const NearbyStoresSection: React.FC<NearbyStoresSectionProps> = ({
                             </div>
                             <div className="bq-store-card__title-group">
                               <div className="bq-store-card__name-row">
-                                <h4 className="bq-store-card__name">{displayName}</h4>
+                                <Link
+                                  to={`/store/${store.id}`}
+                                  className="bq-store-card__name-link"
+                                  onClick={(e) => e.stopPropagation()}
+                                  title={lang === 'ru' ? 'Перейти на страницу магазина' : 'Do‘kon sahifasiga o‘tish'}
+                                >
+                                  <h4 className="bq-store-card__name">{displayName}</h4>
+                                </Link>
                                 {isRealVerified && (
                                   <span className="bq-store-card__verified" title={t.verifiedPartnerTitle}>
                                     <ShieldCheck size={12} />
@@ -848,7 +1000,7 @@ export const NearbyStoresSection: React.FC<NearbyStoresSectionProps> = ({
                               </div>
                             )}
 
-                            {store.website && (
+                            {isValidHttpUrl(store.website) && (
                               <div className="bq-store-card__meta-item">
                                 <Globe size={14} className="text-slate-400" />
                                 <a
@@ -890,6 +1042,15 @@ export const NearbyStoresSection: React.FC<NearbyStoresSectionProps> = ({
                                   <span>{t.getDirections}</span>
                                 </a>
                               )}
+                              <Link
+                                to={`/store/${store.id}`}
+                                className="bq-store-profile-btn"
+                                onClick={(e) => e.stopPropagation()}
+                                title={lang === 'ru' ? 'Страница магазина' : 'Do‘kon sahifasi'}
+                              >
+                                <StoreIcon size={13} />
+                                <span>{lang === 'ru' ? 'Магазин' : 'Do‘kon'}</span>
+                              </Link>
                             </div>
 
                             <div className="bq-store-card__actions-right">

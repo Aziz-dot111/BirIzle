@@ -2,6 +2,7 @@ export * from './user';
 export * from './product';
 export * from './store';
 export * from './submission';
+export * from './order';
 
 /**
  * Diagnostic status of the Firebase configuration

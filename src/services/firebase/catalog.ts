@@ -31,6 +31,15 @@ import type {
   CurrencyCode,
   OfferAvailability,
   Coordinates,
+  OfferSubmission,
+  OfferSubmissionStatus,
+  CreateOfferSubmissionInput,
+  ReviewOfferSubmissionInput,
+  ProductSubmission,
+  ProductSubmissionStatus,
+  CreateProductSubmissionInput,
+  ReviewProductSubmissionInput,
+  StoreStatus,
 } from '@/types';
 import {
   DEMO_NUKUS_STORES,
@@ -53,11 +62,43 @@ import {
   validateUpdateStoreInput,
   validateOfferInput,
   validateUpdateOfferInput,
+  validateOfferSubmissionInput,
+  validateProductSubmissionInput,
+  validateReviewSubmissionInput,
+  generateSearchKeywords,
+  normalizeSearchTerm,
 } from '@/utils/catalogValidation';
+import {
+  getCanonicalOfferId,
+  getLegacyUnderscoreOfferId,
+  isCanonicalOfferId,
+  isLegacyUnderscoreOfferId,
+  parseOfferId,
+  deduplicateOffers,
+  getOfferDedupeKey,
+  isOfferActiveForCustomer,
+  isStoreVisibleToCustomer,
+  type ParsedOfferId,
+} from '@/utils/canonicalOffer';
 
 export const STORES_COLLECTION = 'stores';
 export const PRODUCTS_COLLECTION = 'products';
 export const OFFERS_COLLECTION = 'offers';
+export const OFFER_SUBMISSIONS_COLLECTION = 'offerSubmissions';
+export const PRODUCT_SUBMISSIONS_COLLECTION = 'productSubmissions';
+
+export {
+  getCanonicalOfferId,
+  getLegacyUnderscoreOfferId,
+  isCanonicalOfferId,
+  isLegacyUnderscoreOfferId,
+  parseOfferId,
+  deduplicateOffers,
+  getOfferDedupeKey,
+  isOfferActiveForCustomer,
+  isStoreVisibleToCustomer,
+  type ParsedOfferId,
+};
 
 const FIRESTORE_TIMEOUT_MS = 2500;
 
@@ -114,7 +155,7 @@ export function mapDocumentToStore(id: string, data: DocumentData): Store {
     phone: data.phone || '',
     openingHours: data.openingHours || '',
     isVerified: Boolean(data.isVerified),
-    status: (data.status as 'active' | 'pending' | 'archived') || (data.isVerified ? 'active' : 'pending'),
+    status: (data.status as 'active' | 'pending' | 'archived' | 'inactive' | 'suspended') || 'active',
     isDemo: Boolean(data.isDemo),
     sourceType: (data.sourceType as 'birqidir' | 'openstreetmap') || 'birqidir',
     osmId: data.osmId || undefined,
@@ -163,6 +204,7 @@ export function mapDocumentToOffer(id: string, data: DocumentData): InventoryOff
     storeId: data.storeId || '',
     ownerId: data.ownerId || undefined,
     productId: data.productId || '',
+    variantId: data.variantId || undefined,
     price: typeof data.price === 'number' ? data.price : 0,
     currency: (data.currency as CurrencyCode) || 'UZS',
     availability,
@@ -170,8 +212,72 @@ export function mapDocumentToOffer(id: string, data: DocumentData): InventoryOff
     warrantyMonths: typeof data.warrantyMonths === 'number' ? data.warrantyMonths : undefined,
     deliveryAvailable: typeof data.deliveryAvailable === 'boolean' ? data.deliveryAvailable : undefined,
     notes: data.notes || undefined,
+    version: typeof data.version === 'number' ? data.version : 1, // Legacy offers default to version 1
+    status:
+      (data.status as 'active' | 'archived' | 'pending' | 'superseded') ||
+      (data.isSuperseded ? 'superseded' : 'active'),
+    isSuperseded: Boolean(data.isSuperseded || data.status === 'superseded'),
+    legacyId: data.legacyId || (isCanonicalOfferId(id) ? undefined : id),
     isDemo: Boolean(data.isDemo),
     createdAt: data.createdAt ? normalizeDate(data.createdAt) : undefined,
+    updatedAt: normalizeDate(data.updatedAt),
+  };
+}
+
+/**
+ * Maps a Firestore document snapshot to a typed OfferSubmission object
+ */
+export function mapDocumentToOfferSubmission(id: string, data: DocumentData): OfferSubmission {
+  return {
+    id,
+    merchantUid: data.merchantUid || '',
+    merchantEmail: data.merchantEmail || '',
+    storeId: data.storeId || '',
+    productId: data.productId || '',
+    variantId: data.variantId || undefined,
+    targetOfferId: data.targetOfferId || undefined,
+    version: typeof data.version === 'number' ? data.version : undefined,
+    price: typeof data.price === 'number' ? data.price : 0,
+    currency: (data.currency as CurrencyCode) || 'UZS',
+    availability: (data.availability as OfferAvailability) || 'in_stock',
+    warrantyMonths: typeof data.warrantyMonths === 'number' ? data.warrantyMonths : undefined,
+    deliveryAvailable: typeof data.deliveryAvailable === 'boolean' ? data.deliveryAvailable : undefined,
+    notes: data.notes || undefined,
+    status: (data.status as OfferSubmissionStatus) || 'pending',
+    adminNotes: data.adminNotes || undefined,
+    reviewedBy: data.reviewedBy || undefined,
+    reviewedAt: data.reviewedAt ? normalizeDate(data.reviewedAt) : undefined,
+    approvedOfferId: data.approvedOfferId || undefined,
+    createdAt: normalizeDate(data.createdAt),
+    updatedAt: normalizeDate(data.updatedAt),
+  };
+}
+
+/**
+ * Maps a Firestore document snapshot to a typed ProductSubmission object
+ */
+export function mapDocumentToProductSubmission(id: string, data: DocumentData): ProductSubmission {
+  return {
+    id,
+    merchantUid: data.merchantUid || '',
+    merchantEmail: data.merchantEmail || '',
+    storeId: data.storeId || '',
+    name: data.name || '',
+    category: data.category || '',
+    brand: data.brand || undefined,
+    model: data.model || undefined,
+    barcode: data.barcode || undefined,
+    imageUrl: data.imageUrl || undefined,
+    description: data.description || undefined,
+    variant: data.variant || undefined,
+    specifications: data.specifications || undefined,
+    proposedPrice: typeof data.proposedPrice === 'number' ? data.proposedPrice : undefined,
+    status: (data.status as ProductSubmissionStatus) || 'pending',
+    adminNotes: data.adminNotes || undefined,
+    reviewedBy: data.reviewedBy || undefined,
+    reviewedAt: data.reviewedAt ? normalizeDate(data.reviewedAt) : undefined,
+    approvedProductId: data.approvedProductId || undefined,
+    createdAt: normalizeDate(data.createdAt),
     updatedAt: normalizeDate(data.updatedAt),
   };
 }
@@ -189,6 +295,7 @@ export interface GetStoresFilter {
   includeOsm?: boolean;
   sourceType?: 'birqidir' | 'openstreetmap';
   searchQuery?: string;
+  includeAllStatuses?: boolean;
 }
 
 /**
@@ -201,6 +308,11 @@ export async function getStores(filter: GetStoresFilter = {}): Promise<ServiceRe
   // Local filtering helper (search query, district, category, sourceType, limit)
   const applyFilters = (storeList: Store[]): Store[] => {
     let result = storeList;
+
+    // Exclude archived and unverified pending stores from customer view (unless admin passes includeAllStatuses)
+    if (!filter.includeAllStatuses) {
+      result = result.filter((s) => isStoreVisibleToCustomer(s));
+    }
 
     if (filter.sourceType) {
       result = result.filter((s) => (s.sourceType || 'birqidir') === filter.sourceType);
@@ -249,14 +361,23 @@ export async function getStores(filter: GetStoresFilter = {}): Promise<ServiceRe
 
   try {
     const constraints: QueryConstraint[] = [];
+    // Privacy and Rules invariant: For public customer queries, filter strictly for active stores
+    // at the query level to prevent leaking pending merchant store applications.
+    if (!filter.includeAllStatuses) {
+      constraints.push(where('status', '==', 'active'));
+      // Mandatory limit <= 25 for public customer queries to comply with Firestore list security rule
+      const publicLimit = filter.limitCount && filter.limitCount > 0
+        ? Math.min(filter.limitCount, 25)
+        : 25;
+      constraints.push(limit(publicLimit));
+    } else if (filter.limitCount && filter.limitCount > 0) {
+      constraints.push(limit(filter.limitCount));
+    }
     if (filter.city) {
       constraints.push(where('city', '==', filter.city));
     }
     if (filter.category) {
       constraints.push(where('category', '==', filter.category));
-    }
-    if (filter.limitCount && filter.limitCount > 0) {
-      constraints.push(limit(filter.limitCount));
     }
 
     const colRef = collection(firestoreDb, STORES_COLLECTION);
@@ -877,13 +998,19 @@ export async function getOffersForProduct(productId: string): Promise<ServiceRes
       return { data: [], error: null };
     }
 
-    const offers = snap.docs.map((docSnap) => mapDocumentToOffer(docSnap.id, docSnap.data()));
+    const rawOffers = snap.docs.map((docSnap) => mapDocumentToOffer(docSnap.id, docSnap.data()));
+    // Deduplicate first so latest version/updatedAt wins
+    const deduplicated = deduplicateOffers(rawOffers);
+    // Filter out superseded, archived, pending, or non-positive price offers for customer view
+    const offers = deduplicated
+      .filter((o) => isOfferActiveForCustomer(o))
+      .sort((a, b) => a.price - b.price);
     return { data: offers, error: null };
   } catch (err: unknown) {
     const code = (err as { code?: string })?.code || '';
-    const demoOffers = DEMO_NUKUS_OFFERS.filter((o) => o.productId === cleanProductId).sort(
-      (a, b) => a.price - b.price
-    );
+    const demoOffers = DEMO_NUKUS_OFFERS.filter(
+      (o) => o.productId === cleanProductId && isOfferActiveForCustomer(o)
+    ).sort((a, b) => a.price - b.price);
     if (demoOffers.length > 0) {
       console.warn(`[BirQidir Catalog] getOffersForProduct failed for '${cleanProductId}' (${code || 'unknown'}). Serving demo offers. Error details:`, err);
       return { data: demoOffers, error: null };
@@ -904,7 +1031,9 @@ export async function getOffersByStore(storeId: string): Promise<ServiceResult<I
   const cleanStoreId = storeId.trim();
 
   if (!isFirebaseReady || !firestoreDb) {
-    const offers = DEMO_NUKUS_OFFERS.filter((o) => o.storeId === cleanStoreId);
+    const offers = DEMO_NUKUS_OFFERS.filter(
+      (o) => o.storeId === cleanStoreId && isOfferActiveForCustomer(o)
+    );
     return { data: offers, error: null };
   }
 
@@ -917,12 +1046,73 @@ export async function getOffersByStore(storeId: string): Promise<ServiceResult<I
       return { data: [], error: null };
     }
 
-    const offers = snap.docs.map((docSnap) => mapDocumentToOffer(docSnap.id, docSnap.data()));
+    const rawOffers = snap.docs.map((docSnap) => mapDocumentToOffer(docSnap.id, docSnap.data()));
+    // Strictly isolate offers for this storeId (prevents negative matching leakage)
+    const storeOffers = rawOffers.filter((o) => o.storeId.trim() === cleanStoreId);
+    const deduplicated = deduplicateOffers(storeOffers);
+    // Filter active and positive-priced offers
+    const offers = deduplicated
+      .filter((o) => isOfferActiveForCustomer(o))
+      .sort((a, b) => a.price - b.price);
     return { data: offers, error: null };
   } catch (err: unknown) {
     const code = (err as { code?: string })?.code || '';
     return { data: null, error: getFirebaseErrorMessage(code) };
   }
+}
+
+export interface StoreOfferProductItem extends InventoryOffer {
+  product?: ProductItem;
+  productName: string;
+  productCategory: string;
+  productBrand?: string;
+  productModel?: string;
+  productImage?: string;
+}
+
+/**
+ * Fetches all active inventory offers for a specific store joined with product catalog metadata.
+ * Uses cached product list to avoid N+1 queries on Spark plan.
+ */
+export async function getStoreOffersWithProducts(
+  storeId: string
+): Promise<ServiceResult<StoreOfferProductItem[]>> {
+  if (!storeId || !storeId.trim()) {
+    return { data: null, error: 'Do‘kon identifikatori ko‘rsatilmadi.' };
+  }
+
+  const cleanStoreId = storeId.trim();
+  const offersRes = await getOffersByStore(cleanStoreId);
+  if (offersRes.error) {
+    return { data: null, error: offersRes.error };
+  }
+
+  const offers = offersRes.data || [];
+  if (offers.length === 0) {
+    return { data: [], error: null };
+  }
+
+  // Load cached products list (Spark TTL cache 2m)
+  const allProducts = await getAllProductsCached(true);
+  const productMap = new Map<string, ProductItem>();
+  for (const prod of allProducts) {
+    productMap.set(prod.id, prod);
+  }
+
+  const joined: StoreOfferProductItem[] = offers.map((offer) => {
+    const product = productMap.get(offer.productId);
+    return {
+      ...offer,
+      product,
+      productName: product ? product.name : `Mahsulot (${offer.productId})`,
+      productCategory: product ? product.category : 'general',
+      productBrand: product?.brand,
+      productModel: product?.model,
+      productImage: product?.imageUrl,
+    };
+  });
+
+  return { data: joined, error: null };
 }
 
 /**
@@ -940,8 +1130,8 @@ export async function getStoreProductOffers(
   }
 
   const rawOffers = offersRes.data || [];
-  // Filter out offers with non-positive or missing prices
-  const offers = rawOffers.filter((o) => typeof o.price === 'number' && o.price > 0);
+  // Ensure offers are active for customer view
+  const offers = rawOffers.filter((o) => isOfferActiveForCustomer(o));
   if (offers.length === 0) {
     return { data: [], error: null };
   }
@@ -962,24 +1152,31 @@ export async function getStoreProductOffers(
   );
 
   // Link offers with store data and compute distance if coordinates are present
-  const joinedOffers: StoreProductOffer[] = offers.map((offer) => {
-    const store = storeMap.get(offer.storeId);
-    let distanceKm: number | undefined = undefined;
-    if (userCoords && store?.coordinates && isValidCoordinates(store.coordinates)) {
-      distanceKm = calculateHaversineDistance(userCoords, store.coordinates);
-    }
-    return {
-      ...offer,
-      storeName: store ? store.name : 'Noma‘lum do‘kon',
-      storeCity: store ? store.city : 'Nukus',
-      storeAddress: store ? store.address : '',
-      storePhone: store?.phone,
-      storeCoordinates: store?.coordinates,
-      isStoreVerified: store?.isVerified ?? false,
-      isDemo: Boolean(offer.isDemo || store?.isDemo),
-      distanceKm,
-    };
-  });
+  // Filter out any offers whose store is not visible to customers (archived or unverified pending)
+  const joinedOffers: StoreProductOffer[] = offers
+    .filter((offer) => {
+      const store = storeMap.get(offer.storeId);
+      if (store && !isStoreVisibleToCustomer(store)) return false;
+      return true;
+    })
+    .map((offer) => {
+      const store = storeMap.get(offer.storeId);
+      let distanceKm: number | undefined = undefined;
+      if (userCoords && store?.coordinates && isValidCoordinates(store.coordinates)) {
+        distanceKm = calculateHaversineDistance(userCoords, store.coordinates);
+      }
+      return {
+        ...offer,
+        storeName: store ? store.name : 'Noma‘lum do‘kon',
+        storeCity: store ? store.city : 'Nukus',
+        storeAddress: store ? store.address : '',
+        storePhone: store?.phone,
+        storeCoordinates: store?.coordinates,
+        isStoreVerified: Boolean(store?.isVerified && !store?.isDemo),
+        isDemo: Boolean(offer.isDemo || store?.isDemo),
+        distanceKm,
+      };
+    });
 
   // Sort ascending by price by default
   joinedOffers.sort((a, b) => a.price - b.price);
@@ -1014,6 +1211,13 @@ export async function createStore(input: CreateStoreInput): Promise<ServiceResul
     return { data: null, error: 'Do‘kon yaratish uchun avval tizimga kirishingiz shart.' };
   }
 
+  if (!currentUser.emailVerified) {
+    return {
+      data: null,
+      error: 'Do‘kon arizasini yuborish uchun elektron pochtangiz tasdiqlangan bo‘lishi shart.',
+    };
+  }
+
   const validation = validateStoreInput(input);
   if (!validation.isValid) {
     return { data: null, error: validation.error || 'Do‘kon ma’lumotlari noto‘g‘ri kiritildi.' };
@@ -1037,6 +1241,7 @@ export async function createStore(input: CreateStoreInput): Promise<ServiceResul
       website: input.website?.trim() || null,
       placeType: input.placeType || 'store',
       ownerId: currentUser.uid,
+      ownershipStatus: 'claimed',
       isVerified: false,
       status: 'pending',
       sourceType: 'birqidir',
@@ -1061,6 +1266,7 @@ export async function createStore(input: CreateStoreInput): Promise<ServiceResul
       website: input.website?.trim() || undefined,
       placeType: input.placeType || 'store',
       ownerId: currentUser.uid,
+      ownershipStatus: 'claimed',
       isVerified: false,
       status: 'pending',
       sourceType: 'birqidir',
@@ -1265,12 +1471,127 @@ export async function reactivateStore(storeId: string): Promise<ServiceResult<St
 }
 
 /**
- * Creates a new InventoryOffer in Firestore (/offers/{offerId})
+ * Resolves an offer across all supported ID formats and legacy schemas:
+ * 1. New Canonical ID: `offer|s:...|p:...(|v:...)`
+ * 2. Legacy Underscore ID: `offer_storeId_productId(_variantId)`
+ * 3. Legacy Random ID: Firestore query where storeId == X and productId == Y, filtered by variantId.
+ */
+export async function findOfferForStoreProduct(
+  storeId: string,
+  productId: string,
+  variantId?: string | null
+): Promise<InventoryOffer | null> {
+  if (!isFirebaseReady || !firestoreDb) {
+    return null;
+  }
+
+  const cleanStoreId = (storeId || '').trim();
+  const cleanProductId = (productId || '').trim();
+  const cleanVariantId = variantId && variantId.trim() ? variantId.trim() : null;
+
+  if (!cleanStoreId || !cleanProductId) {
+    return null;
+  }
+
+  try {
+    // 1. Try canonical ID (with strict component and variant validation)
+    const canonicalId = getCanonicalOfferId(cleanStoreId, cleanProductId, cleanVariantId);
+    const canonicalSnap = await getDoc(doc(firestoreDb, OFFERS_COLLECTION, canonicalId));
+    if (canonicalSnap && typeof canonicalSnap.exists === 'function' && canonicalSnap.exists()) {
+      const data = canonicalSnap.data() || {};
+      const matchesStore = String(data.storeId || '').trim() === cleanStoreId;
+      const matchesProduct = String(data.productId || '').trim() === cleanProductId;
+      const matchesVariant = (String(data.variantId || '').trim() || null) === cleanVariantId;
+      if (matchesStore && matchesProduct && matchesVariant) {
+        return mapDocumentToOffer(canonicalSnap.id, data);
+      }
+    }
+
+    // 2. Try legacy underscore ID (with strict component and variant validation)
+    const legacyUnderscoreId = getLegacyUnderscoreOfferId(cleanStoreId, cleanProductId, cleanVariantId);
+    const legacySnap = await getDoc(doc(firestoreDb, OFFERS_COLLECTION, legacyUnderscoreId));
+    if (legacySnap && typeof legacySnap.exists === 'function' && legacySnap.exists()) {
+      const data = legacySnap.data() || {};
+      const matchesStore = String(data.storeId || '').trim() === cleanStoreId;
+      const matchesProduct = String(data.productId || '').trim() === cleanProductId;
+      const matchesVariant = (String(data.variantId || '').trim() || null) === cleanVariantId;
+      if (matchesStore && matchesProduct && matchesVariant) {
+        return mapDocumentToOffer(legacySnap.id, data);
+      }
+    }
+
+    // 3. Fallback: Query by storeId and productId (locates legacy random IDs)
+    const offersColRef = collection(firestoreDb, OFFERS_COLLECTION);
+    const q = query(
+      offersColRef,
+      where('storeId', '==', cleanStoreId),
+      where('productId', '==', cleanProductId)
+    );
+    const querySnap = await getDocs(q);
+
+    if (querySnap && !querySnap.empty && Array.isArray(querySnap.docs)) {
+      const matchingOffers = querySnap.docs.map((d) => mapDocumentToOffer(d.id, d.data()));
+      const candidates = matchingOffers.filter((o) => {
+        const matchesStore = o.storeId.trim() === cleanStoreId;
+        const matchesProduct = o.productId.trim() === cleanProductId;
+        const matchesVariant = (o.variantId?.trim() || null) === cleanVariantId;
+        return matchesStore && matchesProduct && matchesVariant;
+      });
+
+      if (candidates.length > 0) {
+        // If multiple legacy random documents exist for the same store-product-variant,
+        // deduplicate cleanly to select the single authoritative winner
+        const deduped = deduplicateOffers(candidates);
+        return deduped[0] || null;
+      }
+    }
+
+    return null;
+  } catch (err) {
+    console.warn('[OneShop Catalog] findOfferForStoreProduct query warning:', err);
+    return null;
+  }
+}
+
+/**
+ * Fetches an InventoryOffer document by its Firestore document ID
+ */
+export async function getOfferById(offerId: string): Promise<ServiceResult<InventoryOffer>> {
+  if (!offerId || !offerId.trim()) {
+    return { data: null, error: 'Taklif identifikatori ko‘rsatilmadi.' };
+  }
+
+  if (!isFirebaseReady || !firestoreDb) {
+    return { data: null, error: 'Firebase Firestore tizimi hali sozlanmagan.' };
+  }
+
+  try {
+    const cleanId = offerId.trim();
+    const snap = await getDoc(doc(firestoreDb, OFFERS_COLLECTION, cleanId));
+    if (!snap.exists()) {
+      return { data: null, error: 'Taklif topilmadi.' };
+    }
+    return { data: mapDocumentToOffer(snap.id, snap.data() || {}), error: null };
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code || '';
+    return { data: null, error: getFirebaseErrorMessage(code) };
+  }
+}
+
+/**
+ * Creates or updates an InventoryOffer in Firestore (/offers/{offerId})
  * 
- * SECURITY INVARIANTS:
- * 1. Checks that caller owns the referenced store (store.ownerId === currentUser.uid).
- * 2. Binds offer.ownerId to current authenticated user.
- * 3. Enforces non-negative price, valid currency, and valid availability state.
+ * SECURITY & COMPATIBILITY INVARIANTS:
+ * 1. Checks that caller owns the referenced store or is administrator.
+ * 2. Before creating a new document, checks whether an offer already exists for (store, product, variant).
+ *    If an existing offer exists (even with a legacy random ID or legacy underscore ID):
+ *    - Performs IN-PLACE UPDATE on the existing document.
+ *    - Strictly prevents creating a duplicate second active document with the same semantics!
+ *    - Preserves existing `createdAt` timestamp unchanged.
+ *    - Monotonically increments `version` (legacy offers without version default to 1, transitioning to 2).
+ * 3. If no existing offer exists:
+ *    - Creates a new document using the new canonical ID format (`offer|s:...|p:...(|v:...)`).
+ *    - Initializes `version: 1`, `createdAt: serverTimestamp()`.
  */
 export async function createOffer(input: CreateOfferInput): Promise<ServiceResult<InventoryOffer>> {
   if (!isFirebaseReady || !firestoreDb) {
@@ -1289,6 +1610,7 @@ export async function createOffer(input: CreateOfferInput): Promise<ServiceResul
 
   const cleanStoreId = input.storeId.trim();
   const cleanProductId = input.productId.trim();
+  const cleanVariantId = input.variantId?.trim() || undefined;
 
   try {
     // Verify referenced store exists and caller owns it
@@ -1315,14 +1637,67 @@ export async function createOffer(input: CreateOfferInput): Promise<ServiceResul
       };
     }
 
-    const offersColRef = collection(firestoreDb, OFFERS_COLLECTION);
-    const newOfferRef = doc(offersColRef);
-    const nowIso = new Date().toISOString();
+    // Check if an offer already exists (legacy random ID, underscore ID, or canonical ID)
+    const existingOffer = await findOfferForStoreProduct(cleanStoreId, cleanProductId, cleanVariantId);
     const availability = input.availability || 'in_stock';
+    const nowIso = new Date().toISOString();
+
+    if (existingOffer) {
+      // IN-PLACE UPDATE OF EXISTING OFFER:
+      // Prevents creating a duplicate second document in Firestore!
+      // Preserves existing original createdAt timestamp strictly.
+      const existingVersion = typeof existingOffer.version === 'number' ? existingOffer.version : 1;
+      const newVersion = existingVersion + 1;
+      const existingDocRef = doc(firestoreDb, OFFERS_COLLECTION, existingOffer.id);
+
+      const updatePayload: Record<string, unknown> = {
+        price: input.price,
+        currency: input.currency || existingOffer.currency || 'UZS',
+        availability,
+        inStock: availability === 'in_stock',
+        warrantyMonths: input.warrantyMonths !== undefined ? input.warrantyMonths : (existingOffer.warrantyMonths ?? null),
+        deliveryAvailable: input.deliveryAvailable !== undefined ? input.deliveryAvailable : (existingOffer.deliveryAvailable ?? null),
+        notes: input.notes !== undefined ? (input.notes?.trim() || null) : (existingOffer.notes ?? null),
+        variantId: cleanVariantId || existingOffer.variantId || null,
+        version: newVersion,
+        status: input.status || 'active',
+        updatedAt: serverTimestamp(),
+      };
+
+      await updateDoc(existingDocRef, updatePayload);
+
+      const updatedOffer: InventoryOffer = {
+        id: existingOffer.id,
+        storeId: cleanStoreId,
+        productId: cleanProductId,
+        variantId: cleanVariantId || existingOffer.variantId,
+        ownerId: existingOffer.ownerId || currentUser.uid,
+        price: input.price,
+        currency: input.currency || existingOffer.currency || 'UZS',
+        availability,
+        inStock: availability === 'in_stock',
+        warrantyMonths: input.warrantyMonths !== undefined ? input.warrantyMonths : existingOffer.warrantyMonths,
+        deliveryAvailable: input.deliveryAvailable !== undefined ? input.deliveryAvailable : existingOffer.deliveryAvailable,
+        notes: input.notes !== undefined ? (input.notes?.trim() || undefined) : existingOffer.notes,
+        version: newVersion,
+        status: input.status || 'active',
+        legacyId: existingOffer.legacyId || (!isCanonicalOfferId(existingOffer.id) ? existingOffer.id : undefined),
+        isDemo: false,
+        createdAt: existingOffer.createdAt || nowIso,
+        updatedAt: nowIso,
+      };
+
+      return { data: updatedOffer, error: null };
+    }
+
+    // No existing offer found: create brand new canonical offer
+    const canonicalId = getCanonicalOfferId(cleanStoreId, cleanProductId, cleanVariantId);
+    const newOfferRef = doc(firestoreDb, OFFERS_COLLECTION, canonicalId);
 
     const offerPayload: Record<string, unknown> = {
       storeId: cleanStoreId,
       productId: cleanProductId,
+      variantId: cleanVariantId || null,
       ownerId: currentUser.uid,
       price: input.price,
       currency: input.currency || 'UZS',
@@ -1331,6 +1706,8 @@ export async function createOffer(input: CreateOfferInput): Promise<ServiceResul
       warrantyMonths: input.warrantyMonths !== undefined ? input.warrantyMonths : null,
       deliveryAvailable: input.deliveryAvailable !== undefined ? input.deliveryAvailable : null,
       notes: input.notes?.trim() || null,
+      version: 1,
+      status: input.status || 'active',
       isDemo: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -1339,9 +1716,10 @@ export async function createOffer(input: CreateOfferInput): Promise<ServiceResul
     await setDoc(newOfferRef, offerPayload);
 
     const createdOffer: InventoryOffer = {
-      id: newOfferRef.id,
+      id: canonicalId,
       storeId: cleanStoreId,
       productId: cleanProductId,
+      variantId: cleanVariantId,
       ownerId: currentUser.uid,
       price: input.price,
       currency: input.currency || 'UZS',
@@ -1350,12 +1728,784 @@ export async function createOffer(input: CreateOfferInput): Promise<ServiceResul
       warrantyMonths: input.warrantyMonths,
       deliveryAvailable: input.deliveryAvailable,
       notes: input.notes?.trim() || undefined,
+      version: 1,
+      status: input.status || 'active',
       isDemo: false,
       createdAt: nowIso,
       updatedAt: nowIso,
     };
 
     return { data: createdOffer, error: null };
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code || '';
+    return { data: null, error: getFirebaseErrorMessage(code) };
+  }
+}
+
+/**
+ * Creates an Offer Submission by an authenticated merchant (/offerSubmissions/{subId}).
+ *
+ * Checks if target offer already exists to link targetOfferId and record the baseVersion
+ * for safe optimistic concurrency & migration.
+ */
+export async function createOfferSubmission(
+  input: CreateOfferSubmissionInput
+): Promise<ServiceResult<OfferSubmission>> {
+  if (!isFirebaseReady || !firestoreDb) {
+    return { data: null, error: 'Firebase Firestore tizimi hali sozlanmagan.' };
+  }
+
+  const currentUser = firebaseAuth?.currentUser;
+  if (!currentUser) {
+    return { data: null, error: 'Taklif arizasini yuborish uchun tizimga kirishingiz shart.' };
+  }
+
+  const validation = validateOfferSubmissionInput(input);
+  if (!validation.isValid) {
+    return { data: null, error: validation.error || 'Taklif arizasi ma’lumotlari noto‘g‘ri kiritildi.' };
+  }
+
+  const cleanStoreId = input.storeId.trim();
+  const cleanProductId = input.productId.trim();
+  const cleanVariantId = input.variantId?.trim() || undefined;
+
+  try {
+    const storeDocRef = doc(firestoreDb, STORES_COLLECTION, cleanStoreId);
+    const storeSnap = await getDoc(storeDocRef);
+
+    if (!storeSnap.exists()) {
+      return { data: null, error: 'Taklif biriktirilayotgan do‘kon topilmadi.' };
+    }
+
+    const storeData = storeSnap.data() as DocumentData;
+    const isOwner = storeData.ownerId === currentUser.uid;
+
+    let isAdmin = false;
+    if (!isOwner) {
+      const tokenResult = await currentUser.getIdTokenResult().catch(() => null);
+      isAdmin = Boolean(tokenResult?.claims?.admin);
+    }
+
+    if (!isOwner && !isAdmin) {
+      return {
+        data: null,
+        error: 'Siz faqat o‘zingizga tegishli do‘konga mahsulot narxi arizasini yubora olasiz.',
+      };
+    }
+
+    const storeStatus = (storeData.status as StoreStatus) || 'active';
+    if (storeStatus !== 'active') {
+      return {
+        data: null,
+        error: 'Faqat faol va tasdiqlangan do‘konlar uchun mahsulot narxi arizasini yuborish mumkin.',
+      };
+    }
+
+    // Check for duplicate pending submission for same (storeId, productId, variantId)
+    const existingPendingQuery = query(
+      collection(firestoreDb, OFFER_SUBMISSIONS_COLLECTION),
+      where('storeId', '==', cleanStoreId),
+      where('productId', '==', cleanProductId),
+      where('status', '==', 'pending')
+    );
+    const pendingSnap = await getDocs(existingPendingQuery).catch(() => null);
+    const hasDuplicatePending = pendingSnap?.docs
+      ? pendingSnap.docs.some((docSnap) => {
+          const d = docSnap.data();
+          const docVariant = d.variantId ? String(d.variantId).trim() : null;
+          const targetVariant = cleanVariantId || null;
+          return docVariant === targetVariant;
+        })
+      : false;
+
+    if (hasDuplicatePending) {
+      return {
+        data: null,
+        error: 'Ushbu mahsulot uchun arizangiz allaqachon moderator tekshiruvida turibdi.',
+      };
+    }
+
+    let existingOffer: InventoryOffer | null = null;
+    if (input.targetOfferId && input.targetOfferId.trim()) {
+      const targetSnap = await getDoc(doc(firestoreDb, OFFERS_COLLECTION, input.targetOfferId.trim()));
+      if (targetSnap.exists()) {
+        existingOffer = mapDocumentToOffer(targetSnap.id, targetSnap.data() || {});
+      }
+    }
+
+    if (!existingOffer) {
+      existingOffer = await findOfferForStoreProduct(cleanStoreId, cleanProductId, cleanVariantId);
+    }
+
+    let baseVersion: number;
+    let targetOfferId: string | null = null;
+
+    if (existingOffer) {
+      targetOfferId = existingOffer.id;
+      // Explicit version migration: legacy offers missing version default to 1
+      baseVersion = typeof existingOffer.version === 'number' ? existingOffer.version : 1;
+    } else {
+      baseVersion = 0;
+    }
+
+    const subColRef = collection(firestoreDb, OFFER_SUBMISSIONS_COLLECTION);
+    const newSubRef = doc(subColRef);
+    const nowIso = new Date().toISOString();
+    const availability = input.availability || 'in_stock';
+
+    const submissionPayload: Record<string, unknown> = {
+      merchantUid: currentUser.uid,
+      merchantEmail: currentUser.email || '',
+      storeId: cleanStoreId,
+      productId: cleanProductId,
+      variantId: cleanVariantId || null,
+      targetOfferId,
+      version: baseVersion,
+      price: input.price,
+      currency: input.currency || 'UZS',
+      availability,
+      warrantyMonths: input.warrantyMonths !== undefined ? input.warrantyMonths : null,
+      deliveryAvailable: input.deliveryAvailable !== undefined ? input.deliveryAvailable : null,
+      notes: input.notes?.trim() || null,
+      status: 'pending',
+      adminNotes: null,
+      reviewedBy: null,
+      reviewedAt: null,
+      approvedOfferId: null,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    await setDoc(newSubRef, submissionPayload);
+
+    const createdSubmission: OfferSubmission = {
+      id: newSubRef.id,
+      merchantUid: currentUser.uid,
+      merchantEmail: currentUser.email || '',
+      storeId: cleanStoreId,
+      productId: cleanProductId,
+      variantId: cleanVariantId,
+      targetOfferId,
+      version: baseVersion,
+      price: input.price,
+      currency: input.currency || 'UZS',
+      availability,
+      warrantyMonths: input.warrantyMonths,
+      deliveryAvailable: input.deliveryAvailable,
+      notes: input.notes?.trim() || undefined,
+      status: 'pending',
+      adminNotes: null,
+      reviewedBy: null,
+      reviewedAt: null,
+      approvedOfferId: null,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+
+    return { data: createdSubmission, error: null };
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code || '';
+    return { data: null, error: getFirebaseErrorMessage(code) };
+  }
+}
+
+/**
+ * Reviews (approves or rejects) an Offer Submission by an administrator.
+ *
+ * BEHAVIOR:
+ * - If rejected: sets status: 'rejected' and records admin notes/audit timestamp.
+ * - If approved:
+ *   1. Checks for target offer (by submission.targetOfferId or multi-tier store+product lookup).
+ *   2. If existing offer exists (legacy random ID, underscore ID, or canonical ID):
+ *      - Updates existing offer document in place.
+ *      - STRICTLY PRESERVES existing `createdAt` timestamp.
+ *      - Increments `version`: `(existing.version ?? 1) + 1`.
+ *      - Marks approvedOfferId as existing offer document ID.
+ *   3. If no existing offer exists:
+ *      - Creates new offer document using the new canonical ID format.
+ *      - Initializes `version: 1`, `createdAt: serverTimestamp()`.
+ *      - Marks approvedOfferId as canonical ID.
+ */
+export async function reviewOfferSubmission(
+  submissionId: string,
+  input: ReviewOfferSubmissionInput
+): Promise<ServiceResult<OfferSubmission>> {
+  if (!submissionId || !submissionId.trim()) {
+    return { data: null, error: 'Arizaning identifikatori ko‘rsatilmadi.' };
+  }
+
+  if (!isFirebaseReady || !firestoreDb) {
+    return { data: null, error: 'Firebase Firestore tizimi hali sozlanmagan.' };
+  }
+
+  const currentUser = firebaseAuth?.currentUser;
+  if (!currentUser) {
+    return { data: null, error: 'Arizani ko‘rib chiqish uchun tizimga kirishingiz shart.' };
+  }
+
+  const tokenResult = await currentUser.getIdTokenResult().catch(() => null);
+  const isAdmin = Boolean(tokenResult?.claims?.admin);
+  if (!isAdmin) {
+    return { data: null, error: 'Arizalarni tasdiqlash faqat administratorlar uchun ruxsat etilgan.' };
+  }
+
+  const validation = validateReviewSubmissionInput(input);
+  if (!validation.isValid) {
+    return { data: null, error: validation.error || 'Moderatsiya qarori noto‘g‘ri kiritildi.' };
+  }
+
+  const cleanSubId = submissionId.trim();
+
+  try {
+    const subDocRef = doc(firestoreDb, OFFER_SUBMISSIONS_COLLECTION, cleanSubId);
+    const subSnap = await getDoc(subDocRef);
+
+    if (!subSnap.exists()) {
+      return { data: null, error: 'Ko‘rib chiqilayotgan taklif arizasi topilmadi.' };
+    }
+
+    const subData = subSnap.data() as DocumentData;
+
+    const nowIso = new Date().toISOString();
+
+    if (input.status === 'rejected') {
+      const rejectPayload = {
+        status: 'rejected',
+        adminNotes: input.adminNotes?.trim() || null,
+        reviewedBy: currentUser.uid,
+        reviewedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      await updateDoc(subDocRef, rejectPayload);
+
+      const rejectedSubmission: OfferSubmission = {
+        id: cleanSubId,
+        merchantUid: subData.merchantUid || '',
+        merchantEmail: subData.merchantEmail || '',
+        storeId: subData.storeId || '',
+        productId: subData.productId || '',
+        variantId: subData.variantId || undefined,
+        targetOfferId: subData.targetOfferId || undefined,
+        version: typeof subData.version === 'number' ? subData.version : undefined,
+        price: typeof subData.price === 'number' ? subData.price : 0,
+        currency: (subData.currency as CurrencyCode) || 'UZS',
+        availability: (subData.availability as OfferAvailability) || 'in_stock',
+        warrantyMonths: typeof subData.warrantyMonths === 'number' ? subData.warrantyMonths : undefined,
+        deliveryAvailable: typeof subData.deliveryAvailable === 'boolean' ? subData.deliveryAvailable : undefined,
+        notes: subData.notes || undefined,
+        status: 'rejected',
+        adminNotes: input.adminNotes?.trim() || null,
+        reviewedBy: currentUser.uid,
+        reviewedAt: nowIso,
+        approvedOfferId: subData.approvedOfferId || undefined,
+        createdAt: normalizeDate(subData.createdAt),
+        updatedAt: nowIso,
+      };
+
+      return {
+        data: rejectedSubmission,
+        error: null,
+      };
+    }
+
+    // Status is 'approved'
+    let existingOffer: InventoryOffer | null = null;
+    if (subData.targetOfferId && typeof subData.targetOfferId === 'string' && subData.targetOfferId.trim()) {
+      const targetSnap = await getDoc(doc(firestoreDb, OFFERS_COLLECTION, subData.targetOfferId.trim()));
+      if (targetSnap.exists()) {
+        existingOffer = mapDocumentToOffer(targetSnap.id, targetSnap.data() || {});
+      }
+    }
+
+    if (!existingOffer) {
+      existingOffer = await findOfferForStoreProduct(
+        subData.storeId,
+        subData.productId,
+        subData.variantId
+      );
+    }
+
+    let approvedOfferId: string;
+    const availability = (subData.availability as OfferAvailability) || 'in_stock';
+
+    if (existingOffer) {
+      // Existing offer found: update in place, preserving existing createdAt!
+      approvedOfferId = existingOffer.id;
+      const existingVersion = typeof existingOffer.version === 'number' ? existingOffer.version : 1;
+      const nextVersion = existingVersion + 1;
+
+      const offerDocRef = doc(firestoreDb, OFFERS_COLLECTION, existingOffer.id);
+      const updatePayload: Record<string, unknown> = {
+        price: subData.price,
+        currency: subData.currency || existingOffer.currency || 'UZS',
+        availability,
+        inStock: availability === 'in_stock',
+        warrantyMonths: subData.warrantyMonths !== undefined ? subData.warrantyMonths : (existingOffer.warrantyMonths ?? null),
+        deliveryAvailable: subData.deliveryAvailable !== undefined ? subData.deliveryAvailable : (existingOffer.deliveryAvailable ?? null),
+        notes: subData.notes?.trim() || existingOffer.notes || null,
+        variantId: subData.variantId?.trim() || existingOffer.variantId || null,
+        version: nextVersion,
+        status: 'active',
+        updatedAt: serverTimestamp(),
+      };
+
+      await updateDoc(offerDocRef, updatePayload);
+    } else {
+      // Brand new offer: generate new canonical ID
+      const canonicalId = getCanonicalOfferId(
+        subData.storeId,
+        subData.productId,
+        subData.variantId
+      );
+      approvedOfferId = canonicalId;
+
+      const newOfferRef = doc(firestoreDb, OFFERS_COLLECTION, canonicalId);
+      const offerPayload: Record<string, unknown> = {
+        storeId: subData.storeId,
+        productId: subData.productId,
+        variantId: subData.variantId?.trim() || null,
+        ownerId: subData.merchantUid,
+        price: subData.price,
+        currency: subData.currency || 'UZS',
+        availability,
+        inStock: availability === 'in_stock',
+        warrantyMonths: subData.warrantyMonths !== undefined ? subData.warrantyMonths : null,
+        deliveryAvailable: subData.deliveryAvailable !== undefined ? subData.deliveryAvailable : null,
+        notes: subData.notes?.trim() || null,
+        version: 1,
+        status: 'active',
+        isDemo: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+
+      await setDoc(newOfferRef, offerPayload);
+    }
+
+    const approvePayload = {
+      status: 'approved',
+      approvedOfferId,
+      adminNotes: input.adminNotes?.trim() || null,
+      reviewedBy: currentUser.uid,
+      reviewedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+    await updateDoc(subDocRef, approvePayload);
+
+    const approvedSubmission: OfferSubmission = {
+      id: cleanSubId,
+      merchantUid: subData.merchantUid || '',
+      merchantEmail: subData.merchantEmail || '',
+      storeId: subData.storeId || '',
+      productId: subData.productId || '',
+      variantId: subData.variantId || undefined,
+      targetOfferId: subData.targetOfferId || undefined,
+      version: typeof subData.version === 'number' ? subData.version : undefined,
+      price: typeof subData.price === 'number' ? subData.price : 0,
+      currency: (subData.currency as CurrencyCode) || 'UZS',
+      availability: (subData.availability as OfferAvailability) || 'in_stock',
+      warrantyMonths: typeof subData.warrantyMonths === 'number' ? subData.warrantyMonths : undefined,
+      deliveryAvailable: typeof subData.deliveryAvailable === 'boolean' ? subData.deliveryAvailable : undefined,
+      notes: subData.notes || undefined,
+      status: 'approved',
+      adminNotes: input.adminNotes?.trim() || null,
+      reviewedBy: currentUser.uid,
+      reviewedAt: nowIso,
+      approvedOfferId,
+      createdAt: normalizeDate(subData.createdAt),
+      updatedAt: nowIso,
+    };
+
+    return {
+      data: approvedSubmission,
+      error: null,
+    };
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code || '';
+    return { data: null, error: getFirebaseErrorMessage(code) };
+  }
+}
+
+/**
+ * Fetches all offer submissions matching optional filters (used for moderation review)
+ */
+export async function getOfferSubmissions(
+  filter: { storeId?: string; status?: OfferSubmissionStatus; merchantUid?: string; limitCount?: number } = {}
+): Promise<ServiceResult<OfferSubmission[]>> {
+  if (!isFirebaseReady || !firestoreDb) {
+    return { data: [], error: null };
+  }
+
+  try {
+    const colRef = collection(firestoreDb, OFFER_SUBMISSIONS_COLLECTION);
+    const constraints: QueryConstraint[] = [];
+
+    if (filter.storeId && filter.storeId.trim()) {
+      constraints.push(where('storeId', '==', filter.storeId.trim()));
+    }
+    if (filter.status) {
+      constraints.push(where('status', '==', filter.status));
+    }
+    if (filter.merchantUid && filter.merchantUid.trim()) {
+      constraints.push(where('merchantUid', '==', filter.merchantUid.trim()));
+    }
+    // Enforce max limit of 25 to satisfy Firestore list security rules
+    const effectiveLimit = filter.limitCount && filter.limitCount > 0
+      ? Math.min(filter.limitCount, 25)
+      : 25;
+    constraints.push(limit(effectiveLimit));
+
+    const q = query(colRef, ...constraints);
+    const snap = await getDocs(q);
+
+    const submissions = snap.docs.map((docSnap) =>
+      mapDocumentToOfferSubmission(docSnap.id, docSnap.data())
+    );
+    return { data: submissions, error: null };
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code || '';
+    return { data: null, error: getFirebaseErrorMessage(code) };
+  }
+}
+
+/**
+ * Creates a Product Submission by an authenticated merchant (/productSubmissions/{subId}).
+ * Used when a merchant sells a product missing from the global catalog.
+ */
+export async function createProductSubmission(
+  input: CreateProductSubmissionInput
+): Promise<ServiceResult<ProductSubmission>> {
+  if (!isFirebaseReady || !firestoreDb) {
+    return { data: null, error: 'Firebase Firestore tizimi hali sozlanmagan.' };
+  }
+
+  const currentUser = firebaseAuth?.currentUser;
+  if (!currentUser) {
+    return { data: null, error: 'Mahsulot arizasini yuborish uchun tizimga kirishingiz shart.' };
+  }
+
+  const validation = validateProductSubmissionInput(input);
+  if (!validation.isValid) {
+    return { data: null, error: validation.error || 'Mahsulot arizasi ma’lumotlari noto‘g‘ri kiritildi.' };
+  }
+
+  const cleanStoreId = input.storeId.trim();
+  const cleanName = input.name.trim();
+
+  try {
+    const storeDocRef = doc(firestoreDb, STORES_COLLECTION, cleanStoreId);
+    const storeSnap = await getDoc(storeDocRef);
+
+    if (!storeSnap.exists()) {
+      return { data: null, error: 'Mahsulot biriktirilayotgan do‘kon topilmadi.' };
+    }
+
+    const storeData = storeSnap.data() as DocumentData;
+    const isOwner = storeData.ownerId === currentUser.uid;
+
+    let isAdmin = false;
+    if (!isOwner) {
+      const tokenResult = await currentUser.getIdTokenResult().catch(() => null);
+      isAdmin = Boolean(tokenResult?.claims?.admin);
+    }
+
+    if (!isOwner && !isAdmin) {
+      return {
+        data: null,
+        error: 'Siz faqat o‘zingizga tegishli do‘kon nomidan mahsulot arizasini yubora olasiz.',
+      };
+    }
+
+    const storeStatus = (storeData.status as StoreStatus) || 'active';
+    if (storeStatus !== 'active') {
+      return {
+        data: null,
+        error: 'Faqat faol va tasdiqlangan do‘konlar uchun mahsulot arizasini yuborish mumkin.',
+      };
+    }
+
+    // Check for duplicate pending submission with identical normalized name for this store
+    const existingPendingQuery = query(
+      collection(firestoreDb, PRODUCT_SUBMISSIONS_COLLECTION),
+      where('storeId', '==', cleanStoreId),
+      where('status', '==', 'pending')
+    );
+    const pendingSnap = await getDocs(existingPendingQuery).catch(() => null);
+    const targetNormName = normalizeSearchTerm(cleanName);
+    const hasDuplicate = pendingSnap?.docs
+      ? pendingSnap.docs.some((docSnap) => {
+          const d = docSnap.data();
+          return normalizeSearchTerm(d.name || '') === targetNormName;
+        })
+      : false;
+
+    if (hasDuplicate) {
+      return {
+        data: null,
+        error: 'Ushbu mahsulot bo‘yicha arizangiz allaqachon moderator tekshiruvida turibdi.',
+      };
+    }
+
+    const subColRef = collection(firestoreDb, PRODUCT_SUBMISSIONS_COLLECTION);
+    const newSubRef = doc(subColRef);
+    const nowIso = new Date().toISOString();
+
+    const submissionPayload: Record<string, unknown> = {
+      merchantUid: currentUser.uid,
+      merchantEmail: currentUser.email || '',
+      storeId: cleanStoreId,
+      name: cleanName,
+      category: input.category.trim(),
+      brand: input.brand?.trim() || null,
+      model: input.model?.trim() || null,
+      barcode: input.barcode?.trim() || null,
+      imageUrl: input.imageUrl?.trim() || null,
+      description: input.description?.trim() || null,
+      variant: input.variant || null,
+      specifications: input.specifications || null,
+      proposedPrice: typeof input.proposedPrice === 'number' ? input.proposedPrice : null,
+      status: 'pending',
+      adminNotes: null,
+      reviewedBy: null,
+      reviewedAt: null,
+      approvedProductId: null,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+
+    await setDoc(newSubRef, submissionPayload);
+
+    const createdSubmission: ProductSubmission = {
+      id: newSubRef.id,
+      merchantUid: currentUser.uid,
+      merchantEmail: currentUser.email || '',
+      storeId: cleanStoreId,
+      name: cleanName,
+      category: input.category.trim(),
+      brand: input.brand?.trim() || undefined,
+      model: input.model?.trim() || undefined,
+      barcode: input.barcode?.trim() || undefined,
+      imageUrl: input.imageUrl?.trim() || undefined,
+      description: input.description?.trim() || undefined,
+      variant: input.variant,
+      specifications: input.specifications,
+      proposedPrice: typeof input.proposedPrice === 'number' ? input.proposedPrice : undefined,
+      status: 'pending',
+      adminNotes: null,
+      reviewedBy: null,
+      reviewedAt: null,
+      approvedProductId: null,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+
+    return { data: createdSubmission, error: null };
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code || '';
+    return { data: null, error: getFirebaseErrorMessage(code) };
+  }
+}
+
+/**
+ * Fetches all product submissions matching optional filters (used for moderation review and merchant history)
+ */
+export async function getProductSubmissions(
+  filter: { storeId?: string; status?: ProductSubmissionStatus; merchantUid?: string; limitCount?: number } = {}
+): Promise<ServiceResult<ProductSubmission[]>> {
+  if (!isFirebaseReady || !firestoreDb) {
+    return { data: [], error: null };
+  }
+
+  try {
+    const colRef = collection(firestoreDb, PRODUCT_SUBMISSIONS_COLLECTION);
+    const constraints: QueryConstraint[] = [];
+
+    if (filter.storeId && filter.storeId.trim()) {
+      constraints.push(where('storeId', '==', filter.storeId.trim()));
+    }
+    if (filter.status) {
+      constraints.push(where('status', '==', filter.status));
+    }
+    if (filter.merchantUid && filter.merchantUid.trim()) {
+      constraints.push(where('merchantUid', '==', filter.merchantUid.trim()));
+    }
+    // Enforce max limit of 25 to satisfy Firestore list security rules
+    const effectiveLimit = filter.limitCount && filter.limitCount > 0
+      ? Math.min(filter.limitCount, 25)
+      : 25;
+    constraints.push(limit(effectiveLimit));
+
+    const q = query(colRef, ...constraints);
+    const snap = await getDocs(q);
+
+    const submissions = snap.docs.map((docSnap) =>
+      mapDocumentToProductSubmission(docSnap.id, docSnap.data())
+    );
+    return { data: submissions, error: null };
+  } catch (err: unknown) {
+    const code = (err as { code?: string })?.code || '';
+    return { data: null, error: getFirebaseErrorMessage(code) };
+  }
+}
+
+/**
+ * Reviews (approves or rejects) a Product Submission by an administrator.
+ *
+ * BEHAVIOR:
+ * - If rejected: sets status: 'rejected' and records adminNotes, audit timestamp.
+ * - If approved:
+ *   1. If approvedProductId is provided, links to that product.
+ *   2. Otherwise, creates a new product document in /products with search keywords,
+ *      normalized name, minPrice, sellerCount = 0.
+ *   3. Sets status: 'approved' and links approvedProductId.
+ */
+export async function reviewProductSubmission(
+  submissionId: string,
+  input: ReviewProductSubmissionInput
+): Promise<ServiceResult<ProductSubmission>> {
+  if (!submissionId || !submissionId.trim()) {
+    return { data: null, error: 'Arizaning identifikatori ko‘rsatilmadi.' };
+  }
+
+  if (!isFirebaseReady || !firestoreDb) {
+    return { data: null, error: 'Firebase Firestore tizimi hali sozlanmagan.' };
+  }
+
+  const currentUser = firebaseAuth?.currentUser;
+  if (!currentUser) {
+    return { data: null, error: 'Arizani ko‘rib chiqish uchun tizimga kirishingiz shart.' };
+  }
+
+  const tokenResult = await currentUser.getIdTokenResult().catch(() => null);
+  const isAdmin = Boolean(tokenResult?.claims?.admin);
+  if (!isAdmin) {
+    return { data: null, error: 'Arizalarni tasdiqlash faqat administratorlar uchun ruxsat etilgan.' };
+  }
+
+  const validation = validateReviewSubmissionInput(input);
+  if (!validation.isValid) {
+    return { data: null, error: validation.error || 'Moderatsiya qarori noto‘g‘ri kiritildi.' };
+  }
+
+  const cleanSubId = submissionId.trim();
+
+  try {
+    const subDocRef = doc(firestoreDb, PRODUCT_SUBMISSIONS_COLLECTION, cleanSubId);
+    const subSnap = await getDoc(subDocRef);
+
+    if (!subSnap.exists()) {
+      return { data: null, error: 'Ko‘rib chiqilayotgan mahsulot arizasi topilmadi.' };
+    }
+
+    const subData = subSnap.data() as DocumentData;
+    const nowIso = new Date().toISOString();
+
+    if (input.status === 'rejected') {
+      const rejectPayload = {
+        status: 'rejected',
+        adminNotes: input.adminNotes?.trim() || null,
+        reviewedBy: currentUser.uid,
+        reviewedAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      await updateDoc(subDocRef, rejectPayload);
+
+      const rejectedSubmission: ProductSubmission = {
+        id: cleanSubId,
+        merchantUid: subData.merchantUid || '',
+        merchantEmail: subData.merchantEmail || '',
+        storeId: subData.storeId || '',
+        name: subData.name || '',
+        category: subData.category || '',
+        brand: subData.brand || undefined,
+        model: subData.model || undefined,
+        barcode: subData.barcode || undefined,
+        imageUrl: subData.imageUrl || undefined,
+        description: subData.description || undefined,
+        variant: subData.variant || undefined,
+        specifications: subData.specifications || undefined,
+        proposedPrice: typeof subData.proposedPrice === 'number' ? subData.proposedPrice : undefined,
+        status: 'rejected',
+        adminNotes: input.adminNotes?.trim() || null,
+        reviewedBy: currentUser.uid,
+        reviewedAt: nowIso,
+        approvedProductId: subData.approvedProductId || undefined,
+        createdAt: normalizeDate(subData.createdAt),
+        updatedAt: nowIso,
+      };
+
+      return { data: rejectedSubmission, error: null };
+    }
+
+    // Status is 'approved'
+    let approvedProductId = input.approvedProductId?.trim();
+
+    if (!approvedProductId) {
+      // Create new global product in /products
+      const prodColRef = collection(firestoreDb, PRODUCTS_COLLECTION);
+      const newProdRef = doc(prodColRef);
+      approvedProductId = newProdRef.id;
+
+      const keywords = generateSearchKeywords(
+        subData.name || '',
+        subData.category || '',
+        subData.brand || '',
+        subData.barcode || ''
+      );
+
+      const productPayload: Record<string, unknown> = {
+        name: subData.name,
+        category: subData.category,
+        brand: subData.brand || null,
+        model: subData.model || null,
+        barcode: subData.barcode || null,
+        imageUrl: subData.imageUrl || null,
+        description: subData.description || null,
+        searchKeywords: keywords,
+        minPrice: typeof subData.proposedPrice === 'number' ? subData.proposedPrice : 0,
+        sellerCount: 0,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+
+      await setDoc(newProdRef, productPayload);
+    }
+
+    const approvePayload = {
+      status: 'approved',
+      approvedProductId,
+      adminNotes: input.adminNotes?.trim() || null,
+      reviewedBy: currentUser.uid,
+      reviewedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+    await updateDoc(subDocRef, approvePayload);
+
+    const approvedSubmission: ProductSubmission = {
+      id: cleanSubId,
+      merchantUid: subData.merchantUid || '',
+      merchantEmail: subData.merchantEmail || '',
+      storeId: subData.storeId || '',
+      name: subData.name || '',
+      category: subData.category || '',
+      brand: subData.brand || undefined,
+      model: subData.model || undefined,
+      barcode: subData.barcode || undefined,
+      imageUrl: subData.imageUrl || undefined,
+      description: subData.description || undefined,
+      variant: subData.variant || undefined,
+      specifications: subData.specifications || undefined,
+      proposedPrice: typeof subData.proposedPrice === 'number' ? subData.proposedPrice : undefined,
+      status: 'approved',
+      adminNotes: input.adminNotes?.trim() || null,
+      reviewedBy: currentUser.uid,
+      reviewedAt: nowIso,
+      approvedProductId,
+      createdAt: normalizeDate(subData.createdAt),
+      updatedAt: nowIso,
+    };
+
+    return { data: approvedSubmission, error: null };
   } catch (err: unknown) {
     const code = (err as { code?: string })?.code || '';
     return { data: null, error: getFirebaseErrorMessage(code) };

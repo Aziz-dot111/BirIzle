@@ -208,8 +208,17 @@ export const NearbyStoresMap: React.FC<NearbyStoresMapProps> = ({
       }
     }
 
-    // Add Store Markers
+    // Deduplicate stores by unique ID to prevent multiple markers for the same physical store
+    const uniqueStoresMap = new Map<string, Store>();
     stores.forEach((store) => {
+      if (store && store.id && !uniqueStoresMap.has(store.id)) {
+        uniqueStoresMap.set(store.id, store);
+      }
+    });
+    const uniqueStores = Array.from(uniqueStoresMap.values());
+
+    // Add Store Markers
+    uniqueStores.forEach((store) => {
       if (!isValidCoordinates(store.coordinates)) return;
 
       const storePoint: L.LatLngTuple = [store.coordinates.lat, store.coordinates.lng];
@@ -295,6 +304,9 @@ export const NearbyStoresMap: React.FC<NearbyStoresMapProps> = ({
           <div class="bq-map-popup__actions">
             <a href="${directionsUrl}" target="_blank" rel="noopener noreferrer" class="bq-map-popup__dir-btn">
               🧭 ${t.getDirections}
+            </a>
+            <a href="/store/${encodeURIComponent(store.id)}" class="bq-map-popup__store-btn">
+              🏪 ${lang === 'ru' ? 'Страница магазина' : 'Do‘kon sahifasi'}
             </a>
           </div>
         </div>

@@ -1,5 +1,6 @@
 import type { Store, InventoryOffer, ProductItem, Coordinates, StoreProductOfferMatch } from '@/types';
 import { calculateHaversineDistance, isValidCoordinates } from './geo';
+import { isOfferActiveForCustomer, isStoreVisibleToCustomer } from './canonicalOffer';
 
 export interface MatchStoresOptions {
   userCoords?: Coordinates | null;
@@ -32,10 +33,17 @@ export function matchStoresWithProductOffers(
     return [];
   }
 
-  // Filter offers for the specific product (if product is specified)
-  const targetOffers = product
+  // Filter out stores that are not visible to customers (archived, unverified pending)
+  const visibleStores = stores.filter((s) => isStoreVisibleToCustomer(s));
+  if (visibleStores.length === 0) {
+    return [];
+  }
+
+  // Filter offers for the specific product (if product is specified) and ensure active for customer
+  const targetOffers = (product
     ? offers.filter((o) => o.productId === product.id)
-    : offers;
+    : offers
+  ).filter((o) => isOfferActiveForCustomer(o));
 
   if (targetOffers.length === 0) {
     return [];
@@ -65,7 +73,7 @@ export function matchStoresWithProductOffers(
   // Build matched stores
   const matchedStores: Store[] = [];
 
-  for (const store of stores) {
+  for (const store of visibleStores) {
     const offer = offersByStoreId.get(store.id);
     if (!offer) {
       continue; // Strictly exclude stores without an offer

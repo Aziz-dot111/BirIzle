@@ -507,6 +507,29 @@
   flex-wrap: wrap;
 }
 
+.bq-offer-card__store-name-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.bq-offer-card__store-name-link:hover .bq-offer-card__store-name {
+  color: #059669;
+}
+
+.bq-offer-card__store-info-btn {
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 4px;
+}
+
+.bq-offer-card__store-info-btn:hover {
+  background-color: #f1f5f9;
+}
+
 .bq-offer-card__store-name {
   font-size: 1.05rem;
   font-weight: 700;
@@ -1112,6 +1135,26 @@
   text-decoration: none;
   cursor: pointer;
   transition: all var(--transition-fast, 150ms ease);
+}
+
+.bq-store-modal__store-page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1rem;
+  background-color: var(--color-primary-600, #059669);
+  color: var(--color-white, #ffffff);
+  border: 1px solid var(--color-primary-600, #059669);
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.88rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all var(--transition-fast, 150ms ease);
+}
+
+.bq-store-modal__store-page-btn:hover {
+  background-color: var(--color-primary-700, #047857);
 }
 
 .bq-store-modal__call-btn {
