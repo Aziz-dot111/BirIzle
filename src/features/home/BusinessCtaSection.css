@@ -5,13 +5,13 @@
 }
 
 .bq-business-cta-card {
-  background-color: var(--color-primary-950);
-  background-image: linear-gradient(135deg, #022C22 0%, #064E3B 100%);
-  border: 1px solid var(--color-primary-800);
+  background-color: var(--color-slate-900);
+  background-image: linear-gradient(135deg, #17172D 0%, #2A1B70 60%, #4024B0 100%);
+  border: 1px solid rgba(91, 61, 245, 0.3);
   border-radius: var(--radius-2xl);
   padding: clamp(2.25rem, 4.5vw, 3.75rem);
   color: var(--color-white);
-  box-shadow: 0 20px 35px -10px rgba(2, 44, 34, 0.35);
+  box-shadow: 0 20px 35px -10px rgba(23, 23, 45, 0.35);
   position: relative;
   overflow: hidden;
 }
@@ -24,7 +24,7 @@
   right: -100px;
   width: 320px;
   height: 320px;
-  background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(2, 44, 34, 0) 70%);
+  background: radial-gradient(circle, rgba(91, 61, 245, 0.25) 0%, rgba(23, 23, 45, 0) 70%);
   pointer-events: none;
 }
 

@@ -104,7 +104,7 @@ export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
               marginBottom: '1rem',
             }}
           >
-            Ushbu bo‘lim faqat <strong>BirQidir tizim ma’murlari (Admin)</strong> uchun mo‘ljallangan.
+            Ushbu bo‘lim faqat <strong>OneShop tizim ma’murlari (Admin)</strong> uchun mo‘ljallangan.
             Sizning hisobingizda Firebase Custom Claims orqali tasdiqlangan administratorlik huquqi mavjud emas.
           </p>
 

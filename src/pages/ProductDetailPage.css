@@ -21,8 +21,8 @@
 .bq-product-detail__spinner {
   width: 44px;
   height: 44px;
-  border: 3.5px solid var(--color-primary-100, #d1fae5);
-  border-top-color: var(--color-primary-700, #047857);
+  border: 3.5px solid var(--color-primary-100, #EDE9FE);
+  border-top-color: var(--color-primary-700, #5B3DF5);
   border-radius: 50%;
   animation: bq-spin 0.8s linear infinite;
 }
@@ -62,7 +62,7 @@
 }
 
 .bq-breadcrumb-link:hover {
-  color: var(--color-primary-800, #065f46);
+  color: var(--color-primary-800, #4930D5);
   text-decoration: underline;
 }
 
@@ -200,7 +200,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--color-primary-800, #065f46);
+  color: var(--color-primary-800, #4930D5);
   background-color: var(--color-primary-50, #ecfdf5);
   border: 1px solid var(--color-primary-200, #a7f3d0);
   padding: 0.2rem 0.6rem;
@@ -272,7 +272,7 @@
 .bq-product-hero__price-currency {
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--color-primary-700, #047857);
+  color: var(--color-primary-700, #5B3DF5);
 }
 
 .bq-product-hero__savings-pill {
@@ -281,8 +281,8 @@
   gap: 0.35rem;
   font-size: 0.82rem;
   font-weight: 700;
-  color: #065f46;
-  background-color: #d1fae5;
+  color: #4930D5;
+  background-color: #EDE9FE;
   padding: 0.3rem 0.75rem;
   border-radius: var(--radius-full, 9999px);
   width: fit-content;
@@ -382,7 +382,7 @@
 }
 
 .bq-product-sort-select:focus {
-  border-color: var(--color-primary-600, #059669);
+  border-color: var(--color-primary-600, #5B3DF5);
 }
 
 /* View Mode Switcher */
@@ -461,7 +461,7 @@
 
 .bq-legend-dot--emerald {
   background-color: #10b981;
-  border: 2px solid #047857;
+  border: 2px solid #5B3DF5;
 }
 
 /* Offers List & Cards */
@@ -513,7 +513,7 @@
 }
 
 .bq-offer-card__store-name-link:hover .bq-offer-card__store-name {
-  color: #059669;
+  color: #5B3DF5;
 }
 
 .bq-offer-card__store-info-btn {
@@ -548,7 +548,7 @@
 }
 
 .bq-offer-badge--verified {
-  color: #065f46;
+  color: #4930D5;
   background-color: #ecfdf5;
   border: 1px solid #a7f3d0;
 }
@@ -601,8 +601,8 @@
 }
 
 .bq-offer-tag--stock {
-  color: #065f46;
-  background-color: #d1fae5;
+  color: #4930D5;
+  background-color: #EDE9FE;
 }
 
 .bq-offer-tag--out {
@@ -669,13 +669,13 @@
   font-weight: 600;
   background-color: var(--color-primary-50, #ecfdf5);
   border: 1px solid var(--color-primary-200, #a7f3d0);
-  color: var(--color-primary-800, #065f46);
+  color: var(--color-primary-800, #4930D5);
   text-decoration: none;
   transition: all var(--transition-fast, 150ms ease);
 }
 
 .bq-offer-card__phone-btn:hover {
-  background-color: var(--color-primary-100, #d1fae5);
+  background-color: var(--color-primary-100, #EDE9FE);
 }
 
 .bq-offer-card__map-link {
@@ -774,7 +774,7 @@
 .bq-related-card:hover {
   transform: translateY(-2px);
   border-color: var(--color-primary-300, #6ee7b7);
-  box-shadow: 0 8px 18px -4px rgba(4, 120, 87, 0.08);
+  box-shadow: 0 8px 18px -4px rgba(91, 61, 245, 0.08);
 }
 
 .bq-related-card__thumb {
@@ -796,7 +796,7 @@
 .bq-related-card__category {
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--color-primary-700, #047857);
+  color: var(--color-primary-700, #5B3DF5);
   text-transform: uppercase;
 }
 
@@ -857,9 +857,9 @@
 }
 
 .bq-product-variant-chip--active {
-  border-color: var(--color-primary-700, #047857);
+  border-color: var(--color-primary-700, #5B3DF5);
   background-color: var(--color-primary-50, #ecfdf5);
-  box-shadow: 0 0 0 1px var(--color-primary-700, #047857);
+  box-shadow: 0 0 0 1px var(--color-primary-700, #5B3DF5);
 }
 
 .bq-variant-chip__text {
@@ -962,7 +962,7 @@
 .bq-stock-checkbox {
   width: 16px;
   height: 16px;
-  accent-color: var(--color-primary-700, #047857);
+  accent-color: var(--color-primary-700, #5B3DF5);
   cursor: pointer;
 }
 
@@ -979,7 +979,7 @@
 }
 
 .bq-offer-card__store-name-btn:hover .bq-offer-card__store-name {
-  color: var(--color-primary-800, #065f46);
+  color: var(--color-primary-800, #4930D5);
   text-decoration: underline;
 }
 
@@ -990,7 +990,7 @@
 
 .bq-offer-card__store-name-btn:hover .bq-store-info-icon {
   opacity: 1;
-  color: var(--color-primary-700, #047857);
+  color: var(--color-primary-700, #5B3DF5);
 }
 
 /* Freshness badge */
@@ -1061,7 +1061,7 @@
   height: 44px;
   border-radius: var(--radius-lg, 0.625rem);
   background-color: var(--color-primary-50, #ecfdf5);
-  color: var(--color-primary-700, #047857);
+  color: var(--color-primary-700, #5B3DF5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1112,7 +1112,7 @@
 .bq-store-modal__link {
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--color-primary-800, #065f46);
+  color: var(--color-primary-800, #4930D5);
   text-decoration: none;
 }
 
@@ -1143,9 +1143,9 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.65rem 1rem;
-  background-color: var(--color-primary-600, #059669);
+  background-color: var(--color-primary-600, #5B3DF5);
   color: var(--color-white, #ffffff);
-  border: 1px solid var(--color-primary-600, #059669);
+  border: 1px solid var(--color-primary-600, #5B3DF5);
   border-radius: var(--radius-md, 8px);
   font-size: 0.88rem;
   font-weight: 600;
@@ -1154,16 +1154,16 @@
 }
 
 .bq-store-modal__store-page-btn:hover {
-  background-color: var(--color-primary-700, #047857);
+  background-color: var(--color-primary-700, #5B3DF5);
 }
 
 .bq-store-modal__call-btn {
-  background-color: var(--color-primary-700, #047857);
+  background-color: var(--color-primary-700, #5B3DF5);
   color: var(--color-white, #ffffff);
 }
 
 .bq-store-modal__call-btn:hover {
-  background-color: var(--color-primary-800, #065f46);
+  background-color: var(--color-primary-800, #4930D5);
 }
 
 .bq-store-modal__dir-btn {

@@ -90,11 +90,11 @@ export const LoginForm: React.FC = () => {
               <circle cx="14" cy="14" r="2.5" fill="#34D399" />
             </svg>
           </div>
-          <span className="bq-auth-card__brand-title">BirQidir</span>
+          <span className="bq-auth-card__brand-title">OneShop</span>
         </Link>
         <h2 className="bq-auth-card__title">Tizimga kirish</h2>
         <p className="bq-auth-card__subtitle">
-          BirQidir platformasidagi shaxsiy kabinetingizga kiring
+          OneShop platformasidagi shaxsiy kabinetingizga kiring
         </p>
       </div>
 

@@ -2,20 +2,18 @@ import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useSearchParams, Link } from 'react-router-dom';
 import {
   PackageSearch,
-  Store as StoreIcon,
-  ArrowRight,
   AlertCircle,
   MapPin,
   Sparkles,
   ArrowLeft,
   SlidersHorizontal,
   ArrowUpDown,
-  Heart,
   Tag,
   X,
 } from 'lucide-react';
 import { SearchBar } from '@/features/home/SearchBar';
 import { ProductOffersModal } from '@/features/catalog/ProductOffersModal';
+import { ProductCard } from '@/components/common/ProductCard';
 import { LocationControl } from '@/components/common/LocationControl';
 import { Button } from '@/components/common/Button';
 import type { ProductItem, Coordinates } from '@/types';
@@ -25,7 +23,6 @@ import {
   type BrandWithCount,
 } from '@/services/firebase/catalog';
 import { useSearchHistory } from '@/hooks/useSearchHistory';
-import { useFavorites } from '@/hooks/useFavorites';
 import './SearchPage.css';
 
 const QUICK_SUGGESTIONS = ['telefon', 'Samsung A24', 'noutbuk', 'sement', 'konditsioner'];
@@ -94,7 +91,6 @@ export const SearchPage: React.FC = () => {
   const [radiusKm, setRadiusKm] = useState<number | null>(null);
 
   const { addToHistory } = useSearchHistory();
-  const { isProductFavorite, toggleProductFavorite } = useFavorites();
 
   // Stale request race condition protector
   const requestIdRef = useRef(0);
@@ -672,77 +668,13 @@ export const SearchPage: React.FC = () => {
         {/* 5. Results Grid */}
         {!loading && !error && products.length > 0 && (
           <div className="bq-search-grid animate-fade-in">
-            {products.map((product) => {
-              const isFav = isProductFavorite(product.id);
-              return (
-                <div key={product.id} className="bq-search-card">
-                  <div className="bq-search-card__thumb">
-                    {product.imageUrl ? (
-                      <img src={product.imageUrl} alt={product.name} />
-                    ) : (
-                      <PackageSearch size={36} className="text-slate-400" />
-                    )}
-                    <button
-                      type="button"
-                      className={`bq-search-card__fav-btn ${isFav ? 'bq-search-card__fav-btn--active' : ''}`}
-                      onClick={() =>
-                        toggleProductFavorite({
-                          id: product.id,
-                          name: product.name,
-                          category: product.category,
-                          imageUrl: product.imageUrl,
-                        })
-                      }
-                      aria-label={isFav ? "Saqlanganlardan o'chirish" : "Saqlash"}
-                      title={isFav ? "Saqlanganlardan o'chirish" : "Saqlash"}
-                    >
-                      <Heart size={16} fill={isFav ? 'currentColor' : 'none'} />
-                    </button>
-                    <div className="bq-search-card__badge-row">
-                      <span className="bq-search-card__category">{product.category}</span>
-                      {product.isDemo && (
-                        <span className="bq-search-card__demo-tag">Demo namuna</span>
-                      )}
-                    </div>
-                  </div>
-
-                <div className="bq-search-card__body">
-                  {product.brand && (
-                    <span className="bq-search-card__brand">{product.brand}</span>
-                  )}
-                  <h3 className="bq-search-card__name">
-                    <Link to={`/product/${product.id}`} className="bq-search-card__title-link">
-                      {product.name}
-                    </Link>
-                  </h3>
-
-                  <div className="bq-search-card__price-box">
-                    <span className="bq-search-card__price-label">Eng arzon taklif:</span>
-                    <span className="bq-search-card__price">
-                      {product.minPrice !== undefined
-                        ? `${product.minPrice.toLocaleString('uz-UZ')} so‘m`
-                        : 'Narx belgilanmoqda'}
-                    </span>
-                  </div>
-
-                  <div className="bq-search-card__footer">
-                    <span className="bq-search-card__sellers">
-                      <StoreIcon size={14} className="text-emerald" />
-                      <span>{product.sellerCount ?? 1} ta do‘konda</span>
-                    </span>
-                    <Button
-                      variant="primary"
-                      size="sm"
-                      onClick={() => setSelectedProduct(product)}
-                      rightIcon={<ArrowRight size={14} />}
-                    >
-                      Narxlarni solishtirish
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+            {products.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onCompareClick={(prod) => setSelectedProduct(prod)}
+              />
+            ))}
           </div>
         )}
       </div>

@@ -1,16 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Sparkles,
   PackageSearch,
-  Scale,
-  Store,
   ArrowRight,
-  ExternalLink,
-  ChevronDown,
-  ChevronUp,
+  Layers,
 } from 'lucide-react';
-import { Card } from '@/components/common/Card';
+import { ProductCard } from '@/components/common/ProductCard';
 import { Button } from '@/components/common/Button';
+import { getProducts } from '@/services/firebase/catalog';
 import type { ProductItem } from '@/types';
 import './FeaturedProductsSection.css';
 
@@ -20,22 +18,59 @@ interface FeaturedProductsSectionProps {
 
 const CATEGORY_TABS = [
   { id: 'all', label: 'Barchasi' },
+  { id: 'phones', label: 'Smartfonlar' },
   { id: 'electronics', label: 'Elektronika' },
-  { id: 'smartphones', label: 'Smartfonlar' },
   { id: 'computers', label: 'Kompyuterlar' },
   { id: 'appliances', label: 'Maishiy texnika' },
 ];
 
 export const FeaturedProductsSection: React.FC<FeaturedProductsSectionProps> = ({
-  products = [],
+  products: initialProducts,
 }) => {
+  const [products, setProducts] = useState<ProductItem[]>(initialProducts || []);
+  const [loading, setLoading] = useState<boolean>(!initialProducts || initialProducts.length === 0);
   const [activeTab, setActiveTab] = useState('all');
-  const [showConcept, setShowConcept] = useState(false);
 
-  // Filter products if real products exist
+  // Load real catalog data from Firestore / catalog service
+  useEffect(() => {
+    if (initialProducts && initialProducts.length > 0) {
+      setProducts(initialProducts);
+      setLoading(false);
+      return;
+    }
+
+    let isMounted = true;
+    setLoading(true);
+
+    getProducts({ includeDemo: true, limitCount: 16 })
+      .then((res) => {
+        if (!isMounted) return;
+        if (res.data && res.data.length > 0) {
+          setProducts(res.data);
+        } else {
+          setProducts([]);
+        }
+      })
+      .catch((err) => {
+        console.warn('[OneShop Catalog] failed to load featured products:', err);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [initialProducts]);
+
+  // Filter products by active tab
   const filteredProducts = activeTab === 'all'
     ? products
-    : products.filter((p) => p.category.toLowerCase() === activeTab.toLowerCase());
+    : products.filter((p) => {
+        const cat = p.category.toLowerCase();
+        const tab = activeTab.toLowerCase();
+        return cat === tab || (tab === 'phones' && cat.includes('phone')) || (tab === 'appliances' && cat.includes('appliance'));
+      });
 
   const scrollToBusiness = () => {
     const el = document.getElementById('business-section');
@@ -48,15 +83,22 @@ export const FeaturedProductsSection: React.FC<FeaturedProductsSectionProps> = (
     <section id="featured-products-section" className="bq-featured-section">
       <div className="container">
         {/* Section Header */}
-        <div className="bq-section-header">
-          <div className="bq-section-tag">
-            <Sparkles size={14} />
-            <span>Ommabop takliflar</span>
+        <div className="bq-featured-header-row">
+          <div className="bq-section-header" style={{ marginBottom: 0 }}>
+            <div className="bq-section-tag">
+              <Sparkles size={14} className="inline-icon text-purple" />
+              <span>Ommabop takliflar</span>
+            </div>
+            <h2 className="bq-section-title">Ommabop mahsulotlar va narxlar</h2>
+            <p className="bq-section-desc">
+              O‘zbekiston bo‘ylab eng ko‘p qidirilayotgan mahsulotlar va do‘konlardagi eng yaxshi narxlar.
+            </p>
           </div>
-          <h2 className="bq-section-title">Ommabop mahsulotlar va narxlar</h2>
-          <p className="bq-section-desc">
-            O‘zbekiston bo‘ylab eng ko‘p qidirilayotgan mahsulotlar va ularning eng ma’qul narxlari.
-          </p>
+
+          <Link to="/search" className="bq-featured-view-all">
+            <span>Barcha tovarlar</span>
+            <ArrowRight size={16} />
+          </Link>
         </div>
 
         {/* Category Filter Tabs */}
@@ -74,162 +116,54 @@ export const FeaturedProductsSection: React.FC<FeaturedProductsSectionProps> = (
           ))}
         </div>
 
-        {/* Content Area: Real Products OR Honest Empty State */}
-        {filteredProducts.length > 0 ? (
+        {/* Loading Skeletons */}
+        {loading && (
           <div className="bq-featured-grid">
-            {filteredProducts.map((product) => (
-              <Card key={product.id} variant="default" hoverable padding="none" className="bq-product-card">
-                <div className="bq-product-card__thumb">
-                  {product.imageUrl ? (
-                    <img src={product.imageUrl} alt={product.name} />
-                  ) : (
-                    <PackageSearch size={32} className="text-slate-400" />
-                  )}
-                  <span className="bq-product-card__category">{product.category}</span>
+            {[1, 2, 3, 4].map((n) => (
+              <div key={n} className="bq-product-card-skeleton">
+                <div className="bq-product-card-skeleton__thumb" />
+                <div className="bq-product-card-skeleton__body">
+                  <div className="bq-product-card-skeleton__line" style={{ width: '40%' }} />
+                  <div className="bq-product-card-skeleton__line" style={{ width: '85%' }} />
+                  <div className="bq-product-card-skeleton__line" style={{ width: '65%' }} />
+                  <div className="bq-product-card-skeleton__line" style={{ width: '50%', marginTop: 'auto' }} />
                 </div>
-                <div className="bq-product-card__body">
-                  <h3 className="bq-product-card__name">{product.name}</h3>
-                  <div className="bq-product-card__price-row">
-                    <span className="bq-product-card__price-label">Eng arzon:</span>
-                    <span className="bq-product-card__price">
-                      {product.minPrice !== undefined
-                        ? `${product.minPrice.toLocaleString('uz-UZ')} so‘m`
-                        : 'Narx belgilanmoqda'}
-                    </span>
-                  </div>
-                  <div className="bq-product-card__footer">
-                    <span className="bq-product-card__sellers">
-                      <Store size={14} />
-                      <span>{product.sellerCount ?? 0} ta do‘konda</span>
-                    </span>
-                    <Button variant="ghost" size="sm" rightIcon={<ArrowRight size={14} />}>
-                      Solishtirish
-                    </Button>
-                  </div>
-                </div>
-              </Card>
+              </div>
             ))}
           </div>
-        ) : (
+        )}
+
+        {/* Content Area: Real Products */}
+        {!loading && filteredProducts.length > 0 && (
+          <div className="bq-featured-grid">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
+
+        {/* Empty State if truly no products */}
+        {!loading && filteredProducts.length === 0 && (
           <div className="bq-empty-products-wrapper">
             <div className="bq-empty-products-card">
               <div className="bq-empty-products-icon">
                 <PackageSearch size={28} />
               </div>
-              <h3 className="bq-empty-products-title">Mahsulotlar katalogi shakllantirilmoqda</h3>
+              <h3 className="bq-empty-products-title">Bu toifada tovarlar mavjud emas</h3>
               <p className="bq-empty-products-desc">
-                Hozirda BirQidir platformasida rasmiy do‘konlar va sotuvchilar ro‘yxatdan o‘tib, o‘z tovar
-                inventarlarini kiritishmoqda. Yangi do‘konlar qo‘shilgach, real narxlar va eng ma’qul
-                takliflar ushbu bo‘limda avtomatik ravishda paydo bo‘ladi.
+                Tanlangan toifa bo‘yicha hozircha mahsulotlar topilmadi. Barcha toifadagi tovarlarni ko‘rish uchun katalogga o‘ting.
               </p>
               <div className="bq-empty-products-actions">
-                <Button
-                  variant="primary"
-                  size="md"
-                  onClick={scrollToBusiness}
-                  rightIcon={<ArrowRight size={15} />}
-                >
+                <Link to="/search">
+                  <Button variant="primary" size="md" leftIcon={<Layers size={16} />}>
+                    Barcha tovarlarni ko‘rish
+                  </Button>
+                </Link>
+                <Button variant="secondary" size="md" onClick={scrollToBusiness}>
                   Sotuvchimisiz? Tovarlarni joylashtiring
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="md"
-                  onClick={() => setShowConcept(!showConcept)}
-                  rightIcon={showConcept ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-                >
-                  {showConcept ? 'Namunani yopish' : 'Katalog qanday ko‘rinadi? (Konsept namuna)'}
                 </Button>
               </div>
             </div>
-
-            {/* Collapsible Illustrative Concept Preview */}
-            {showConcept && (
-              <div className="bq-concept-preview-box animate-fade-in">
-                <div className="bq-concept-preview-header">
-                  <span className="bq-concept-preview-badge">
-                    <Sparkles size={14} /> Namuna / Konsept — 2-bosqichda ulanadi
-                  </span>
-                  <span className="bq-concept-preview-note">
-                    Real do‘konlar inventari ulanganida mahsulot kartochkalari shunday ko‘rinishda aks etadi:
-                  </span>
-                </div>
-
-                <div className="bq-concept-grid">
-                  <div className="bq-concept-card">
-                    <div className="bq-concept-card__thumb">
-                      <div className="bq-concept-icon-box">
-                        <Scale size={24} />
-                      </div>
-                      <span className="bq-concept-tag">Smartfonlar</span>
-                    </div>
-                    <div className="bq-concept-card__body">
-                      <div className="bq-concept-title">Smartfon 128GB (Flagman seriyasi)</div>
-                      <div className="bq-concept-price-range">
-                        <span className="bq-concept-price-label">Narx diapazoni:</span>
-                        <span className="bq-concept-price">4 200 000 — 4 950 000 so‘m</span>
-                      </div>
-                      <div className="bq-concept-footer">
-                        <span className="bq-concept-seller-count">
-                          <Store size={13} /> 12 ta do‘konda mavjud
-                        </span>
-                        <span className="bq-concept-status-pill">Narxlar solishtirilgan</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bq-concept-card">
-                    <div className="bq-concept-card__thumb">
-                      <div className="bq-concept-icon-box">
-                        <Scale size={24} />
-                      </div>
-                      <span className="bq-concept-tag">Noutbuklar</span>
-                    </div>
-                    <div className="bq-concept-card__body">
-                      <div className="bq-concept-title">Ultrabuk 14&quot; M2 16/512GB</div>
-                      <div className="bq-concept-price-range">
-                        <span className="bq-concept-price-label">Narx diapazoni:</span>
-                        <span className="bq-concept-price">12 400 000 — 13 800 000 so‘m</span>
-                      </div>
-                      <div className="bq-concept-footer">
-                        <span className="bq-concept-seller-count">
-                          <Store size={13} /> 8 ta do‘konda mavjud
-                        </span>
-                        <span className="bq-concept-status-pill">Narxlar solishtirilgan</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bq-concept-card">
-                    <div className="bq-concept-card__thumb">
-                      <div className="bq-concept-icon-box">
-                        <Scale size={24} />
-                      </div>
-                      <span className="bq-concept-tag">Maishiy texnika</span>
-                    </div>
-                    <div className="bq-concept-card__body">
-                      <div className="bq-concept-title">Inverter Kir yuvish mashinasi 7kg</div>
-                      <div className="bq-concept-price-range">
-                        <span className="bq-concept-price-label">Narx diapazoni:</span>
-                        <span className="bq-concept-price">3 850 000 — 4 400 000 so‘m</span>
-                      </div>
-                      <div className="bq-concept-footer">
-                        <span className="bq-concept-seller-count">
-                          <Store size={13} /> 6 ta do‘konda mavjud
-                        </span>
-                        <span className="bq-concept-status-pill">Narxlar solishtirilgan</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bq-concept-disclaimer">
-                  <ExternalLink size={13} />
-                  <span>
-                    Eslatma: Bu illyustrativ namunadir. Haqiqiy tovarlar va do‘konlar narxlari 2-bosqichda ulanadi.
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>

@@ -29,7 +29,7 @@ export const BusinessCtaSection: React.FC = () => {
             </div>
 
             <h2 className="bq-business-title">
-              Biznesingizni BirQidir’da rivojlantiring.
+              Biznesingizni OneShop’da rivojlantiring.
             </h2>
 
             <p className="bq-business-desc">
@@ -113,7 +113,7 @@ export const BusinessCtaSection: React.FC = () => {
             </div>
 
             <h3 id="biz-modal-title" className="bq-biz-modal__title">
-              BirQidir Biznes Portali
+              OneShop Biznes Portali
             </h3>
 
             <p className="bq-biz-modal__desc">

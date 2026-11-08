@@ -38,7 +38,7 @@ body {
   position: absolute;
   top: -40px;
   left: 1rem;
-  background: var(--color-primary-800);
+  background: var(--color-primary-700);
   color: var(--color-white);
   padding: 0.5rem 1rem;
   z-index: 100;
@@ -151,12 +151,14 @@ h6 {
 }
 
 /* Semantic utility colors */
-.text-emerald {
+.text-emerald,
+.text-purple,
+.text-primary {
   color: var(--color-primary-700) !important;
 }
 
 .text-green {
-  color: var(--color-primary-600) !important;
+  color: var(--color-success-main) !important;
 }
 
 .text-amber {
@@ -168,8 +170,16 @@ h6 {
 }
 
 .text-success {
-  color: #059669 !important;
+  color: var(--color-success-main) !important;
   font-weight: 600;
+}
+
+.text-danger {
+  color: var(--color-danger-main) !important;
+}
+
+.bg-primary-soft {
+  background-color: var(--color-primary-50) !important;
 }
 
 .inline-icon {

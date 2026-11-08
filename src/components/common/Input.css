@@ -40,7 +40,7 @@
 
 .bq-input:focus {
   border-color: var(--color-primary-600);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+  box-shadow: 0 0 0 3px rgba(91, 61, 245, 0.15);
 }
 
 .bq-input--has-left-icon {

@@ -296,7 +296,7 @@ export const ProfilePage: React.FC = () => {
             >
               <PartyPopper size={20} />
               <span>
-                Tabriklaymiz! BirQidir platformasida yangi akkauntingiz muvaffaqiyatli yaratildi.
+                Tabriklaymiz! OneShop platformasida yangi akkauntingiz muvaffaqiyatli yaratildi.
               </span>
             </div>
           )}

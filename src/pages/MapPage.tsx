@@ -47,8 +47,8 @@ export const MapPage: React.FC = () => {
             </h1>
             <p className="bq-map-page__desc">
               {lang === 'ru'
-                ? 'Находите ближайшие магазины, официальных партнеров BirQidir и точки продаж на карте Нукуса и Каракалпакстана с реальными ценами и расстояниями.'
-                : 'Nukus shahri va butun Qoraqalpog‘iston bo‘ylab do‘konlar, BirQidir rasmiy hamkorlari va savdo nuqtalarini xaritada qidiring, eng arzon narxlar va masofalarni aniqlang.'}
+                ? 'Находите ближайшие магазины, официальных партнеров OneShop и точки продаж на карте Нукуса и Каракалпакстана с реальными ценами и расстояниями.'
+                : 'Nukus shahri va butun Qoraqalpog‘iston bo‘ylab do‘konlar, OneShop rasmiy hamkorlari va savdo nuqtalarini xaritada qidiring, eng arzon narxlar va masofalarni aniqlang.'}
             </p>
           </div>
 

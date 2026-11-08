@@ -261,8 +261,8 @@ export const ProductDetailPage: React.FC = () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: product ? `${product.name} — BirQidir` : 'BirQidir',
-          text: `BirQidir orqali ${product?.name} narxlarini solishtiring:`,
+          title: product ? `${product.name} — OneShop` : 'OneShop',
+          text: `OneShop orqali ${product?.name} narxlarini solishtiring:`,
           url,
         });
         return;

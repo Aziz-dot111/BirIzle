@@ -10,15 +10,15 @@ export const PriceComparisonSection: React.FC = () => {
         {/* Section Header */}
         <div className="bq-section-header bq-section-header--center">
           <div className="bq-section-tag">
-            <Scale size={14} />
+            <Scale size={14} className="inline-icon text-purple" />
             <span>Narxlarni solishtirish</span>
           </div>
           <h2 className="bq-section-title">
             Bir mahsulot. Turli takliflar. <br />
-            <span className="text-emerald">O‘zingiz tanlagan narx.</span>
+            <span className="text-purple">O‘zingiz tanlagan narx.</span>
           </h2>
           <p className="bq-section-desc">
-            BirQidir turli do‘konlar, rasmiy distribyutorlar va onlayn sotuvchilar narxlarini bir jadvalda
+            OneShop turli do‘konlar, rasmiy distribyutorlar va onlayn sotuvchilar narxlarini bir jadvalda
             jamlaydi. Endi o‘nlab saytlarni alohida ochish shart emas.
           </p>
         </div>

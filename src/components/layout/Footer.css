@@ -59,9 +59,9 @@
   font-weight: 600;
   padding: 0.25rem 0.65rem;
   border-radius: var(--radius-xs);
-  background-color: rgba(4, 120, 87, 0.2);
+  background-color: rgba(91, 61, 245, 0.15);
   color: var(--color-primary-300);
-  border: 1px solid rgba(4, 120, 87, 0.4);
+  border: 1px solid rgba(91, 61, 245, 0.35);
   width: fit-content;
 }
 

@@ -154,14 +154,14 @@
 
 .bq-offer-item:hover {
   border-color: var(--color-primary-400);
-  box-shadow: 0 4px 12px rgba(4, 120, 87, 0.08);
+  box-shadow: 0 4px 12px rgba(91, 61, 245, 0.08);
   transform: translateY(-1px);
 }
 
 .bq-offer-item--best-price {
-  border-color: var(--color-primary-500);
-  background-color: rgba(240, 253, 244, 0.35);
-  box-shadow: 0 2px 8px rgba(4, 120, 87, 0.06);
+  border-color: var(--color-primary-400);
+  background-color: var(--color-primary-50);
+  box-shadow: 0 2px 8px rgba(91, 61, 245, 0.06);
 }
 
 .bq-offer-store-info {

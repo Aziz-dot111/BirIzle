@@ -81,7 +81,7 @@ export const ServicesSection: React.FC = () => {
           <div className="bq-section-tag">Xizmatlar va ustalar</div>
           <h2 className="bq-section-title">Malakali mutaxassislar va servis xizmatlari</h2>
           <p className="bq-section-desc">
-            BirQidir nafaqat tovarlar, balki kundalik hayotdagi zarur xizmatlarni topish va ularning
+            OneShop nafaqat tovarlar, balki kundalik hayotdagi zarur xizmatlarni topish va ularning
             narxlarini solishtirish imkoniyatini taqdim etadi.
           </p>
         </div>

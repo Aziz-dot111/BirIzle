@@ -65,8 +65,8 @@ function createStorePinIcon(
       ? 'Открытые данные карты OpenStreetMap'
       : 'OpenStreetMap ochiq xarita ma’lumoti'
     : lang === 'ru'
-      ? 'Торговая точка BirQidir'
-      : 'BirQidir savdo nuqtasi';
+      ? 'Торговая точка OneShop'
+      : 'OneShop savdo nuqtasi';
 
   if (isCheapest) {
     tooltipTitle += lang === 'ru' ? ' (Лучшая цена!)' : ' (Eng arzon taklif!)';

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import {
   Tv,
   Laptop,
@@ -12,11 +12,7 @@ import {
   Sparkles,
   Layers,
   ArrowRight,
-  Info,
-  X,
 } from 'lucide-react';
-import { Card } from '@/components/common/Card';
-import { Button } from '@/components/common/Button';
 import './CategoryGrid.css';
 
 interface CategoryItem {
@@ -90,26 +86,15 @@ const CATEGORIES: CategoryItem[] = [
 ];
 
 export const CategoryGrid: React.FC = () => {
-  const navigate = useNavigate();
-  const [selectedCat, setSelectedCat] = useState<CategoryItem | null>(null);
-
-  // Close modal on Escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && selectedCat) {
-        setSelectedCat(null);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedCat]);
-
   return (
     <section id="categories-section" className="bq-categories-section">
       <div className="container">
         {/* Section Header */}
         <div className="bq-section-header">
-          <div className="bq-section-tag">Mahsulotlar katalogi</div>
+          <div className="bq-section-tag">
+            <Layers size={14} className="inline-icon" />
+            <span>Mahsulotlar katalogi</span>
+          </div>
           <h2 className="bq-section-title">Ommabop toifalar bo‘yicha ko‘rib chiqing</h2>
           <p className="bq-section-desc">
             Bozor va do‘konlardagi tovarlarni toifalar orqali oson qidiring va eng yaxshi narxlarni solishtiring.
@@ -119,21 +104,10 @@ export const CategoryGrid: React.FC = () => {
         {/* 10-Item Category Grid */}
         <div className="bq-category-grid">
           {CATEGORIES.map((cat) => (
-            <Card
+            <Link
               key={cat.id}
-              variant="default"
-              hoverable
-              padding="md"
+              to={`/search?category=${encodeURIComponent(cat.id)}`}
               className="bq-cat-card"
-              onClick={() => setSelectedCat(cat)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setSelectedCat(cat);
-                }
-              }}
               aria-label={`${cat.name} toifasi: ${cat.itemCountDesc}`}
             >
               <div className="bq-cat-card__icon-box">
@@ -146,77 +120,10 @@ export const CategoryGrid: React.FC = () => {
               <div className="bq-cat-card__action" aria-hidden="true">
                 <ArrowRight size={16} className="bq-cat-card__arrow" />
               </div>
-            </Card>
+            </Link>
           ))}
         </div>
       </div>
-
-      {/* Honest Preview Modal */}
-      {selectedCat && (
-        <div className="bq-modal-backdrop animate-fade-in" onClick={() => setSelectedCat(null)}>
-          <div
-            className="bq-cat-modal"
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="cat-modal-title"
-          >
-            <button
-              type="button"
-              className="bq-cat-modal__close"
-              onClick={() => setSelectedCat(null)}
-              aria-label="Yopish"
-            >
-              <X size={18} />
-            </button>
-
-            <div className="bq-cat-modal__icon">
-              {selectedCat.icon}
-            </div>
-
-            <h3 id="cat-modal-title" className="bq-cat-modal__title">
-              {selectedCat.name}
-            </h3>
-            <p className="bq-cat-modal__desc">{selectedCat.itemCountDesc}</p>
-
-            <div className="bq-cat-modal__notice">
-              <div className="bq-cat-modal__notice-head">
-                <Info size={16} />
-                <span>Toifa qidiruvi haqida:</span>
-              </div>
-              <p>
-                Ushbu toifadagi tovarlar ro‘yxati, do‘konlar inventari va narxlarni real vaqtda solishtirish
-                keyingi 2-bosqichda mahsulotlar ma’lumotlar bazasi ulangach faollashadi.
-              </p>
-            </div>
-
-            <div className="bq-cat-modal__actions" style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
-              <Button
-                variant="outline"
-                size="md"
-                onClick={() => setSelectedCat(null)}
-                style={{ flex: 1 }}
-              >
-                Yopish
-              </Button>
-              <Button
-                variant="primary"
-                size="md"
-                onClick={() => {
-                  const catId = selectedCat.id;
-                  setSelectedCat(null);
-                  navigate(`/search?category=${encodeURIComponent(catId)}`);
-                }}
-                rightIcon={<ArrowRight size={16} />}
-                style={{ flex: 1.5 }}
-              >
-                Mahsulotlarni ko‘rish
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 };
-
